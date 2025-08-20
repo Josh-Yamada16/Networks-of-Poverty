@@ -39,7 +39,7 @@ class TokenSimulation:
                         gr.graph['stingy_count'] += 1
         # If any self-loops were added, update the edge matrix and print info
         if updated_nodes:
-            print(f"Iteration {it + 2}: Self-loop added for node(s): {', '.join(str(x) for x in updated_nodes)}")
+            # print(f"Iteration {it + 2}: Self-loop added for node(s): {', '.join(str(x) for x in updated_nodes)}")
             node_neighbors = Setup.get_node_neighbors(gr)
             edge_mat[:] = Setup.generate_edge_matrix(node_neighbors=node_neighbors, node_names=node_list)
             # print(Utils.calc_eigenvector(edge_mat))
