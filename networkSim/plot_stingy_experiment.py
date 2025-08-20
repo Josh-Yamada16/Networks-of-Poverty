@@ -5,7 +5,7 @@ from setup import Setup
 from simulation import TokenSimulation
 
 # Experiment settings
-max_stingy_values = list(range(0, P.NUM_NODES + 1, 2))  # Every other value from 0 to NUM_NODES
+max_stingy_values = list(range(P.NUM_NODES + 1))  # Every other value from 0 to NUM_NODES
 num_trials = 1  # Number of runs per setting for averaging
 from collections import defaultdict
 results_by_actual_stingy = defaultdict(list)
