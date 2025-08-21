@@ -1,6 +1,6 @@
-from simulation import TokenSimulation
-import parameters as P
-from interactivePlot import InteractivePlot
+from .simulation import TokenSimulation
+from . import parameters as P
+from .interactivePlot import InteractivePlot
 import matplotlib.pyplot as plt
 
 def main():

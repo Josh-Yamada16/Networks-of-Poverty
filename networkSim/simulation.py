@@ -1,9 +1,9 @@
 import networkx as nx
 import numpy as np
-from setup import Setup
-import parameters as P
-from visualizer import Visualization as viz
-from utils import Utils
+from . import parameters as P
+from .setup import Setup
+from .visualizer import Visualization as viz
+from .utils import Utils
 
 layout_functions = {
     'spring': viz.spring_lay,

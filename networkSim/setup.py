@@ -1,13 +1,12 @@
 import networkx as nx
 import random
 import numpy as np
-import parameters as P
+from . import parameters as P
 import string
 from collections import defaultdict
 from typing import Tuple
-import math
-from utils import Utils as utils
-from visualizer import Visualization as viz
+from .utils import Utils as utils
+from .visualizer import Visualization as viz
 
 class Setup:
 

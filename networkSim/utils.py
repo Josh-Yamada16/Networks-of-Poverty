@@ -1,7 +1,7 @@
 import random
 import numpy as np
 import networkx as nx
-import parameters as P
+from . import parameters as P
 import math
 
 class Utils:
@@ -23,6 +23,19 @@ class Utils:
         result = dot_product / np.dot(end_monies, end_monies)
         # print(f"Matrix scaling factor: {result:.4f}")
         return result
+
+    @staticmethod
+    def compare_vectors(vec: np.ndarray, edge_mat: np.ndarray) -> float:
+        """Compare a money vector to the principal eigenvector of edge_mat using cosine similarity.
+        Returns a value in [0, 1]."""
+        v = Utils.calc_eigenvector(edge_mat)
+        a = np.asarray(vec, dtype=float)
+        b = np.asarray(v, dtype=float)
+        denom = (np.linalg.norm(a) * np.linalg.norm(b))
+        if denom == 0:
+            return 0.0
+        cos = np.dot(a, b) / denom
+        return float(abs(cos))
 
     @staticmethod
     def check_if_eigenvector(end_monies: np.ndarray, edge_mat: np.ndarray) -> bool:
@@ -62,12 +75,26 @@ class Utils:
             print("=========" * 10)
     
     @staticmethod
-    def adj_list_to_graph(adj_list: dict) -> nx.Graph:
-        G = nx.MultiDiGraph()
+    def adj_list_to_graph(adj_list: dict, directed_graph: bool = False, money_amount: dict | None = None) -> nx.Graph:
+        """Create a graph from an adjacency list.
+        Args:
+            adj_list: mapping node->list(neighbors)
+            directed_graph: if True, produce a MultiDiGraph (allows multiple edges); else undirected Graph.
+            money_amount: optional dict mapping node->money to set on nodes.
+        """
+        if directed_graph:
+            G = nx.MultiDiGraph()
+        else:
+            G = nx.Graph()
         G.add_nodes_from(list(adj_list.keys()))
         for k, v in adj_list.items():
             for node in v:
                 G.add_edge(k, node)
+        # assign money if provided
+        if money_amount:
+            for n, amt in money_amount.items():
+                if n in G.nodes:
+                    G.nodes[n]["money"] = amt
         return G
 
     @staticmethod

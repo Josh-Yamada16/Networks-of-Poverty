@@ -2,7 +2,7 @@ import matplotlib.pyplot as plt
 from matplotlib.widgets import Button
 from matplotlib.animation import FuncAnimation
 import networkx as nx
-from visualizer import Visualization as viz
+from .visualizer import Visualization as viz
 
 class InteractivePlot:
     def __init__(self, states, layout):
