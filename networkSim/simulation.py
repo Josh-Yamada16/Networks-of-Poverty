@@ -5,15 +5,14 @@ from .setup import Setup
 from .visualizer import Visualization as viz
 from .utils import Utils
 
-layout_functions = {
-    'spring': viz.spring_lay,
-    'circular': viz.circ_lay,
-    # Add more layouts if needed
-}
 
 class TokenSimulation:
     def __init__(self, max_stingy_behaviors=None):
         self.max_stingy_behaviors = max_stingy_behaviors
+        self.layout_functions = {
+            'spring': viz.spring_lay,
+            'circular': viz.circ_lay
+        }
 
     def check_and_apply_stingy_behavior(self, gr: nx.Graph, it: int, edge_mat: np.ndarray, node_list: list[str]):
         if not getattr(P, 'STINGY_ENABLED', True):
@@ -75,7 +74,7 @@ class TokenSimulation:
         # Initialize gains/losses history and store original money for each nodew
         og_money_amounts = {node: data["money"] for node, data in g.nodes(data=True)}
         node_colors = [g.nodes[n]["money"] for n in node_list]
-        layout = layout_functions.get(P.LAYOUT, viz.spring_lay)(g)
+        layout = self.layout_functions.get(P.LAYOUT, viz.spring_lay)(g)
         states = [(g.copy(), node_colors.copy())]
         for it in range(iterations):
             self.trade_cycle(gr=g, it=it, edge_mat=edge_mat, node_list=node_list, states=states)

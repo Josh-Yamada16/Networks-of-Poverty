@@ -7,7 +7,7 @@ STINGY_WINDOW = 4
 # Parameters for Main
 SHOW_PLOT = True  # Whether to show the plot at the end of the simulation
 DRAW_INITIAL_GRAPH = False # Whether to draw the initial graph
-CONTROL_RANDOM_SEED = True  # Whether to control random seed for reproducibility
+CONTROL_RANDOM_SEED = False  # Whether to control random seed for reproducibility
 
 # Parameters for Simulation
 NUM_ITERATIONS = 20  # Number of iterations for the token exchange simulation
