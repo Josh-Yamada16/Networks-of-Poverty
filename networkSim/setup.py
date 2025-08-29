@@ -1,12 +1,12 @@
 import networkx as nx
 import random
 import numpy as np
-from . import parameters as P
+import parameters as P
 import string
 from collections import defaultdict
 from typing import Tuple
-from .utils import Utils as utils
-from .visualizer import Visualization as viz
+from utils import Utils as utils
+from visualizer import Visualization as viz
 
 class Setup:
 
@@ -70,7 +70,7 @@ class Setup:
             G.add_edges_from([(u, v) for u, v in G_undirected.edges()] + [(v, u) for u, v in G_undirected.edges()])
             G.graph["type"] = "default"
         elif t == "custom":
-            G = utils.adj_list_to_graph(P.CUSTOM_GRAPH)
+            G = utils.adj_list_to_graph(P.CUSTOM_GRAPH, directed_graph=True)
             G.graph["type"] = "custom"
         else:
             G = nx.random_regular_graph(d=3, n=n_nodes, seed=seed)

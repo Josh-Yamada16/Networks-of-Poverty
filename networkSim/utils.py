@@ -1,7 +1,7 @@
 import random
 import numpy as np
 import networkx as nx
-from . import parameters as P
+import parameters as P
 import math
 
 class Utils:

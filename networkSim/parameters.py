@@ -11,11 +11,11 @@ CONTROL_RANDOM_SEED = False  # Whether to control random seed for reproducibilit
 
 # Parameters for Simulation
 NUM_ITERATIONS = 20  # Number of iterations for the token exchange simulation
-LAYOUT = "spring"  # Layout for the graph visualization (e.g., "spring", "circular")
+LAYOUT = "circular"  # Layout for the graph visualization (e.g., "spring", "circular")
 
 # Parameters for Graph Generation
 NUM_NODES = 10  # Number of nodes in the graph
-GRAPH_TYPE = "dir"  # Type of graph to generate (e.g., "erd", "wat", "bara", "cir", "lat", "barb", "sto", "reg")
+GRAPH_TYPE = "custom"  # Type of graph to generate (e.g., "erd", "wat", "bara", "cir", "lat", "barb", "sto", "reg")
 CUSTOM_GRAPH = {
     0: [1],
     1: [0, 2],

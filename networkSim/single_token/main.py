@@ -1,4 +1,4 @@
-from ..simulation import TokenSimulation
+from ..tokenSim import TokenSimulation
 from .. import parameters as P
 from ..interactivePlot import InteractivePlot
 import matplotlib.pyplot as plt

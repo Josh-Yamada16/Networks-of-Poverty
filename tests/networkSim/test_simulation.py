@@ -1,7 +1,7 @@
 import unittest
 import networkx as nx
 import numpy as np
-from networkSim.simulation import TokenSimulation
+from networkSim.tokenSim import TokenSimulation
 from networkSim.setup import Setup
 import networkSim.parameters as P
 
