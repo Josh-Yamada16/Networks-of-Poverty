@@ -46,7 +46,6 @@ class TokenSimulation:
             edge_mat[:] = Setup.generate_edge_matrix(node_neighbors=node_neighbors, node_names=node_list)
             # print(Utils.calc_eigenvector(edge_mat))
 
-    @staticmethod
     def update_ledger(self, amount, from_node, to_node, method, it):
         self.ledger.record(
             iteration=it,
@@ -55,22 +54,22 @@ class TokenSimulation:
             amount=amount,
             method=method
         )
-    @staticmethod
-    def ledger_logic(graph: nx.Graph, trans: np.ndarray, node_list: list[str], it: int):
+
+    def ledger_logic(self, graph: nx.Graph, trans: np.ndarray, node_list: list[str], it: int):
         for r in range(len(node_list)):
             method = None
             for c in range(len(node_list)):
-                if r == c and trans[r, c] == 0:
+                if trans[r, c] == 0:
                     continue
                 elif trans[r, c] > 0 and r != c:
                     method = 'trade'
                 elif trans[r, c] > 0 and r == c:
                     method = 'stingy'
-                amount = trans[r, c] * graph[node_list[c]]["money"]
-                TokenSimulation.update_ledger(amount=amount, from_node=node_list[c], to_node=node_list[r], method=method, it=it)
+                node_money = graph.nodes[node_list[c]]["money"]
+                amount = trans[r, c] * node_money
+                self.update_ledger(amount=amount, from_node=node_list[c], to_node=node_list[r], method=method, it=it)
 
-    @staticmethod
-    def trade(graph: nx.Graph, edge_mat: np.ndarray, node_list: list[str], it: int, previous_money: dict[str, float]):
+    def trade(self, graph: nx.Graph, edge_mat: np.ndarray, node_list: list[str], it: int, previous_money: dict[str, float]):
         # Convert node money into an array
         money_col_vector = np.array([graph.nodes[node]["money"] for node in node_list], dtype=float).T
         # Compute net flow using matrix multiplication
@@ -79,7 +78,7 @@ class TokenSimulation:
         # Update the money for each node
         for i, node in enumerate(node_list):
             graph.nodes[node]["money"] = result[i]
-        TokenSimulation.ledger_logic(graph=graph, trans=trans, node_list=node_list, it=it)
+        self.ledger_logic(graph=graph, trans=trans, node_list=node_list, it=it)
 
     def trade_cycle(self, gr: nx.Graph, it: int, edge_mat: np.ndarray, node_list: list[str], states):
         previous_money = {n: gr.nodes[n]['money'] for n in node_list}
@@ -112,4 +111,5 @@ class TokenSimulation:
         mat_scaling_fac = Utils.compare_to_eigenvector(np.array(end_monies), edge_mat)
         Utils.check_if_eigenvector(end_monies=np.array(end_monies), edge_mat=edge_mat)
         # print(np.array(end_monies))
-        return states, layout, edge_mat
+        # print(self.ledger.df)
+        return states, layout, edge_mat, self.ledger

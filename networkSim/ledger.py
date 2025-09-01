@@ -28,43 +28,36 @@ class Ledger:
         ]
         self.df = pd.DataFrame(columns=cols)
 
-    def record(self,
-               *,
-               iteration: int,
-               from_node: Optional[Any],
-               to_node: Optional[Any],
-               amount: float,
-               method: Optional[str] = None,
-               metadata: Optional[Dict] = None,
-               tx_id: Optional[str] = None,
-               ts: Optional[float] = None) -> str:
-        """Append a transaction to the ledger and return its tx_id.
-
-        Fields:
-            iteration: simulation iteration index
-            from_node / to_node: node identifiers (str or int)
-            amount: numeric token amount (positive)
-            method: short string describing the action
-            metadata: optional dict (will be JSON-serialized)
+    def record(self, *, iteration: int, from_node=None, to_node=None, amount: float=0.0, token_type: str=None, method: str=None, metadata: dict=None):
         """
-        if amount is None:
-            raise ValueError("amount must be provided")
-        tx_id = tx_id or str(uuid.uuid4())
-        ts = ts or time.time()
-        meta_json = json.dumps(metadata or {})
-        row = {
-            "tx_id": tx_id,
+        Append a transaction row to the in-memory pandas ledger (self.df).
+        Returns the transaction id.
+        """
+        tx = {
+            # "tx_id": str(uuid.uuid4()),
             "iteration": int(iteration),
-            "ts": float(ts),
+            # "ts": time.time(),
             "from_node": from_node,
             "to_node": to_node,
             "amount": float(amount),
+            "token_type": token_type,
             "method": method,
-            "metadata": meta_json,
+            "metadata": json.dumps(metadata or {})
         }
-        # append row
-        self.df = pd.concat([self.df, pd.DataFrame([row])], ignore_index=True)
-        return tx_id
+
+        # create a one-row DataFrame for the new transaction
+        new_row = pd.DataFrame([tx])
+
+        # if empty, replace; otherwise concatenate with aligned columns to avoid FutureWarning
+        if self.df.empty:
+            self.df = new_row
+        else:
+            cols = self.df.columns.union(new_row.columns)
+            self.df = pd.concat(
+                [self.df.reindex(columns=cols), new_row.reindex(columns=cols)],
+                ignore_index=True,
+                sort=False
+            )
 
     def get_iteration(self, iteration: int) -> pd.DataFrame:
         """Return a copy of the DataFrame rows for the given iteration."""

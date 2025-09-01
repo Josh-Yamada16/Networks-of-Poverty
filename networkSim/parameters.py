@@ -1,5 +1,5 @@
 # Stingy Parameters
-STINGY_ENABLED = True
+STINGY_ENABLED = False
 STINGY_MAX_BEHAVIORS = 3
 STINGY_AVG_LOSS_PCT = 0.1
 STINGY_WINDOW = 4
@@ -10,12 +10,12 @@ DRAW_INITIAL_GRAPH = False # Whether to draw the initial graph
 CONTROL_RANDOM_SEED = False  # Whether to control random seed for reproducibility
 
 # Parameters for Simulation
-NUM_ITERATIONS = 20  # Number of iterations for the token exchange simulation
+NUM_ITERATIONS = 30  # Number of iterations for the token exchange simulation
 LAYOUT = "circular"  # Layout for the graph visualization (e.g., "spring", "circular")
 
 # Parameters for Graph Generation
 NUM_NODES = 10  # Number of nodes in the graph
-GRAPH_TYPE = "custom"  # Type of graph to generate (e.g., "erd", "wat", "bara", "cir", "lat", "barb", "sto", "reg")
+GRAPH_TYPE = "dir"  # Type of graph to generate (e.g., "erd", "wat", "bara", "cir", "lat", "barb", "sto", "reg")
 CUSTOM_GRAPH = {
     0: [1],
     1: [0, 2],

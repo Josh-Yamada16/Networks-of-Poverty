@@ -2,7 +2,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import parameters as P
 from setup import Setup
-from simulation import TokenSimulation
+from networkSim.tokenSim import TokenSimulation
 
 # Experiment settings
 max_stingy_values = list(range(P.NUM_NODES + 1))  # Every other value from 0 to NUM_NODES
