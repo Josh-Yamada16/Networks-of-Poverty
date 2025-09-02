@@ -28,8 +28,8 @@ class Setup:
         nx.relabel_nodes(G, mapping, copy=False)
 
     @staticmethod
-    def gen_graph(t: str, n_nodes: int, seed: int = 42) -> Tuple[nx.Graph, np.ndarray, list]:
-        if P.CONTROL_RANDOM_SEED:
+    def gen_graph(t: str, n_nodes: int, seed: int = 42, control_random: bool = False) -> Tuple[nx.Graph, np.ndarray, list]:
+        if P.CONTROL_RANDOM_SEED or control_random:
             random.seed(seed)
             np.random.seed(seed)
         graph_types = {

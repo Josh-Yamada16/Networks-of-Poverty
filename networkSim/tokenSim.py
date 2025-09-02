@@ -69,7 +69,7 @@ class TokenSimulation:
                 amount = trans[r, c] * node_money
                 self.update_ledger(amount=amount, from_node=node_list[c], to_node=node_list[r], method=method, it=it)
 
-    def trade(self, graph: nx.Graph, edge_mat: np.ndarray, node_list: list[str], it: int, previous_money: dict[str, float]):
+    def trade(self, graph: nx.Graph, edge_mat: np.ndarray, node_list: list[str], it: int, gen_ledger: bool):
         # Convert node money into an array
         money_col_vector = np.array([graph.nodes[node]["money"] for node in node_list], dtype=float).T
         # Compute net flow using matrix multiplication
@@ -78,11 +78,12 @@ class TokenSimulation:
         # Update the money for each node
         for i, node in enumerate(node_list):
             graph.nodes[node]["money"] = result[i]
-        self.ledger_logic(graph=graph, trans=trans, node_list=node_list, it=it)
+        if gen_ledger:
+            self.ledger_logic(graph=graph, trans=trans, node_list=node_list, it=it)
 
-    def trade_cycle(self, gr: nx.Graph, it: int, edge_mat: np.ndarray, node_list: list[str], states):
+    def trade_cycle(self, gr: nx.Graph, it: int, edge_mat: np.ndarray, node_list: list[str], gen_ledger: bool, states):
         previous_money = {n: gr.nodes[n]['money'] for n in node_list}
-        self.trade(graph=gr, edge_mat=edge_mat, node_list=node_list, it=it, previous_money=previous_money)
+        self.trade(graph=gr, edge_mat=edge_mat, node_list=node_list, it=it, gen_ledger=gen_ledger)
 
         # Track gains/losses for each node this cycle
         for n in node_list:
@@ -96,15 +97,15 @@ class TokenSimulation:
         node_colors = [gr.nodes[n]["money"] for n in node_list]
         states.append((gr.copy(), node_colors.copy()))
 
-    def run_simulation(self, iterations: int = 10):
-        g, edge_mat, node_list = Setup.gen_graph(t=P.GRAPH_TYPE, n_nodes=P.NUM_NODES, seed=42)
-        # Initialize gains/losses history and store original money for each nodew
+    def run_simulation(self, gen_ledger: bool, iterations: int = 10, seed: int = 42, control_random: bool = False):
+        g, edge_mat, node_list = Setup.gen_graph(t=P.GRAPH_TYPE, n_nodes=P.NUM_NODES, seed=seed, control_random=control_random)
+        # Initialize gains/losses history and store original money for each node
         og_money_amounts = {node: data["money"] for node, data in g.nodes(data=True)}
         node_colors = [g.nodes[n]["money"] for n in node_list]
         layout = layout_functions.get(P.LAYOUT, viz.spring_lay)(g)
         states = [(g.copy(), node_colors.copy())]
         for it in range(iterations):
-            self.trade_cycle(gr=g, it=it, edge_mat=edge_mat, node_list=node_list, states=states)
+            self.trade_cycle(gr=g, it=it, edge_mat=edge_mat, node_list=node_list, gen_ledger=gen_ledger, states=states)
         Utils.calc_and_print_percent_change(g=g, previous_money=og_money_amounts, it=None)
         last_graph = states[-1][0]
         end_monies = [last_graph.nodes[n]["money"] for n in node_list]
