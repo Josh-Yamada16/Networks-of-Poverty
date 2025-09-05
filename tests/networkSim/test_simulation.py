@@ -1,13 +1,13 @@
 import unittest
 import networkx as nx
 import numpy as np
-from networkSim.tokenSim import TokenSimulation
+from networkSim.tokenSim import ExchangeSimulation
 from networkSim.setup import Setup
 import networkSim.parameters as P
 
-class TestTokenSimulation(unittest.TestCase):
+class TestExchangeSimulation(unittest.TestCase):
     def setUp(self):
-        self.sim = TokenSimulation()
+        self.sim = ExchangeSimulation()
         self.n_nodes = 5
         self.g, self.edge_mat, self.node_list = Setup.gen_graph(t="erd", n_nodes=self.n_nodes, seed=1)
         Setup.assign_money(self.g)

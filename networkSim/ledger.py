@@ -22,6 +22,7 @@ class Ledger:
             "ts",
             "from_node",
             "to_node",
+            "token_type",
             "amount",
             "method",
             "metadata",

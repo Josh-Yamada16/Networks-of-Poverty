@@ -7,11 +7,11 @@ STINGY_WINDOW = 4
 # Parameters for Main
 SHOW_PLOT = True  # Whether to show the plot at the end of the simulation
 DRAW_INITIAL_GRAPH = False # Whether to draw the initial graph
-CONTROL_RANDOM_SEED = False  # Whether to control random seed for reproducibility
+CONTROL_RANDOM_SEED = True  # Whether to control random seed for reproducibility
 
 # Parameters for Simulation
 NUM_ITERATIONS = 30  # Number of iterations for the token exchange simulation
-LAYOUT = "circular"  # Layout for the graph visualization (e.g., "spring", "circular")
+LAYOUT = "spring"  # Layout for the graph visualization (e.g., "spring", "circular")
 
 # Parameters for Graph Generation
 NUM_NODES = 10  # Number of nodes in the graph

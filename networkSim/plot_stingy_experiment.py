@@ -2,7 +2,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import parameters as P
 from setup import Setup
-from tokenSim import TokenSimulation
+from tokenSim import ExchangeSimulation
 
 # Experiment settings
 max_stingy_values = list(range(P.NUM_NODES + 1))  # Every other value from 0 to NUM_NODES
@@ -12,7 +12,7 @@ results_by_actual_stingy = defaultdict(list)
 
 for max_stingy in max_stingy_values:
     for _ in range(num_trials):
-        sim = TokenSimulation(max_stingy_behaviors=max_stingy)
+        sim = ExchangeSimulation(max_stingy_behaviors=max_stingy)
         g, edge_mat, node_list = Setup.gen_graph(t=P.GRAPH_TYPE, n_nodes=P.NUM_NODES, seed=42)
         states, layout, edge_mat, ledger = sim.run_simulation(iterations=P.NUM_ITERATIONS)
         last_graph = states[-1][0]
