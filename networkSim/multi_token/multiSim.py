@@ -1,40 +1,18 @@
 from ..setup import Setup
-from ..tokenSim import TokenSimulation
+from ..tokenSim import ExchangeSimulation
 from .. import parameters as P
 import networkx as nx
 from ..visualizer import Visualization as viz
 import numpy as np
 from ..utils import Utils
 
-class MultiTokenSimulation(TokenSimulation):
-    @staticmethod
+class MultiTokenSimulation(ExchangeSimulation):
     def trade_cycle(self, gr: nx.Graph, it: int, edge_mat: np.ndarray, node_list: list[str], states):
         # capture balances before the trade
         previous_money = {n: gr.nodes[n]['money'] for n in node_list}
 
-        # build column vector of money and compute per-pair transfers
-        money_col = np.array([previous_money[n] for n in node_list], dtype=float)
-        # transfer_matrix[i, j] = amount sent from node i to node j
-        transfer_matrix = edge_mat * money_col[:, None]
-
         # Perform the balance update using the base trade implementation
         self.trade(graph=gr, edge_mat=edge_mat, node_list=node_list)
-
-        # If a ledger is attached to the simulation instance, record all non-zero transfers
-        ledger = getattr(self, 'ledger', None)
-        if ledger is not None:
-            n = len(node_list)
-            for i in range(n):
-                from_node = node_list[i]
-                for j in range(n):
-                    amt = float(transfer_matrix[i, j])
-                    if amt > 1e-12:
-                        to_node = node_list[j]
-                        try:
-                            ledger.record(iteration=it, from_node=from_node, to_node=to_node, amount=amt, method='trade')
-                        except Exception:
-                            # tolerate ledger failures during recording to keep simulation running
-                            pass
 
         # Track gains/losses for each node this cycle
         for n in node_list:
@@ -42,8 +20,10 @@ class MultiTokenSimulation(TokenSimulation):
             gr.nodes[n].setdefault('gains_losses', []).append(gain_loss)
 
         # Stingy behavior: check and apply using separate method
-        self.check_and_apply_stingy_behavior(gr, it, edge_mat, node_list)
+        # self.check_and_apply_stingy_behavior(gr, it, edge_mat, node_list)
 
+        
+        
         Utils.calc_and_print_percent_change(g=gr, previous_money=previous_money, it=it)
         node_colors = [gr.nodes[n]["money"] for n in node_list]
         states.append((gr.copy(), node_colors.copy()))
