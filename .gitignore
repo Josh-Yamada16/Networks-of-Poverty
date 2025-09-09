@@ -23,6 +23,10 @@
 hs_err_pid*
 replay_pid*
 
-networkSim/networkSimEnv/networkSim/networkSimEnv/
+networkSim/networkSimEnv/
 **/__pycache__/
 .vscode/
+{.venv/
+venv/
+env/
+ENV/}
