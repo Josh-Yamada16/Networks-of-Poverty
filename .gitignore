@@ -30,4 +30,7 @@ env/
 networkSim/networkSimEnv/
 **/__pycache__/
 .vscode/
-
+{.venv/
+venv/
+env/
+ENV/}
