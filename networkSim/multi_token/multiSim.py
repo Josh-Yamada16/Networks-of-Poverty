@@ -22,8 +22,6 @@ class MultiTokenSimulation(ExchangeSimulation):
         # Stingy behavior: check and apply using separate method
         # self.check_and_apply_stingy_behavior(gr, it, edge_mat, node_list)
 
-        
-        
         Utils.calc_and_print_percent_change(g=gr, previous_money=previous_money, it=it)
         node_colors = [gr.nodes[n]["money"] for n in node_list]
         states.append((gr.copy(), node_colors.copy()))

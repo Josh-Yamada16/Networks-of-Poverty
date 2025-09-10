@@ -17,7 +17,7 @@ class ExchangeSimulation:
     def __init__(self, max_stingy_behaviors=None):
         self.max_stingy_behaviors = max_stingy_behaviors
         # Map of named ledgers for experiments that need multiple ledgers.
-        self.ledgers: Dict[str, Ledger] = {}
+        self.ledger = Ledger()
 
     def check_and_apply_stingy_behavior(self, gr: nx.Graph, it: int, edge_mat: np.ndarray, node_list: list[str]):
         if not getattr(P, 'STINGY_ENABLED', True):
@@ -48,8 +48,8 @@ class ExchangeSimulation:
             edge_mat[:] = Setup.generate_edge_matrix(node_neighbors=node_neighbors, node_names=node_list)
             # print(Utils.calc_eigenvector(edge_mat))
 
-    def update_ledger(self, amount, from_node, to_node, method, it, ledger_name='default'):
-        self.ledgers[ledger_name].record(
+    def update_ledger(self, amount, from_node, to_node, method, it):
+        self.ledger.record(
             iteration=it,
             from_node=from_node,
             to_node=to_node,
@@ -106,7 +106,6 @@ class ExchangeSimulation:
         node_colors = [g.nodes[n]["money"] for n in node_list]
         layout = layout_functions.get(P.LAYOUT, viz.spring_lay)(g)
         states = [(g.copy(), node_colors.copy())]
-        self.ledgers['default'] = Ledger()
         for it in range(iterations):
             self.trade_cycle(gr=g, it=it, edge_mat=edge_mat, node_list=node_list, gen_ledger=gen_ledger, states=states)
         Utils.calc_and_print_percent_change(g=g, previous_money=og_money_amounts, it=None)

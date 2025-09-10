@@ -4,7 +4,8 @@ from interactivePlot import InteractivePlot
 import matplotlib.pyplot as plt
 
 def main():
-    states, layout, edge_mat, ledger = ExchangeSimulation(max_stingy_behaviors=100).run_simulation(P.NUM_ITERATIONS)
+    states, layout, edge_mat, ledger = ExchangeSimulation(max_stingy_behaviors=P.MAX_STINGY_BEHAVIORS)\
+        .run_simulation(gen_ledger=P.GENERATE_LEDGER, iterations=P.NUM_ITERATIONS)
     print(ledger.df)
     viz = InteractivePlot(states=states, layout=layout)
     viz.draw_current()

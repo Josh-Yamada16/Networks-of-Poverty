@@ -6,12 +6,12 @@ STINGY_WINDOW = 4
 
 # Parameters for Main
 SHOW_PLOT = True  # Whether to show the plot at the end of the simulation
-DRAW_INITIAL_GRAPH = False # Whether to draw the initial graph
-CONTROL_RANDOM_SEED = True  # Whether to control random seed for reproducibility
-
-# Parameters for Simulation
-NUM_ITERATIONS = 30  # Number of iterations for the token exchange simulation
+CONTROL_RANDOM_SEED = False  # Whether to control random seed for reproducibility
+GENERATE_LEDGER = True  # Whether to generate a ledger of transactions
+MAX_STINGY_BEHAVIORS = 100  # Maximum number of stingy behaviors allowed in the simulation
+NUM_ITERATIONS = 40  # Number of iterations for the token exchange simulation
 LAYOUT = "spring"  # Layout for the graph visualization (e.g., "spring", "circular")
+DRAW_INITIAL_GRAPH = False # Whether to draw the initial graph
 
 # Parameters for Graph Generation
 NUM_NODES = 10  # Number of nodes in the graph
