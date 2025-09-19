@@ -20,8 +20,6 @@ class ExchangeSimulation:
         self.ledger = Ledger()
 
     def check_and_apply_stingy_behavior(self, gr: nx.Graph, it: int, edge_mat: np.ndarray, node_list: list[str]):
-        if not getattr(P, 'STINGY_ENABLED', True):
-            return
         window = getattr(P, 'STINGY_WINDOW', 3)
         avg_loss_pct = getattr(P, 'STINGY_AVG_LOSS_PCT', 0.05)
         max_behaviors = self.max_stingy_behaviors
@@ -83,7 +81,7 @@ class ExchangeSimulation:
         if gen_ledger:
             self.ledger_logic(graph=graph, trans=trans, node_list=node_list, it=it)
 
-    def trade_cycle(self, gr: nx.Graph, it: int, edge_mat: np.ndarray, node_list: list[str], gen_ledger: bool, states):
+    def trade_cycle(self, gr: nx.Graph, it: int, edge_mat: np.ndarray, node_list: list[str], gen_ledger: bool, stingy_behavior_enabled: bool, states):
         previous_money = {n: gr.nodes[n]['money'] for n in node_list}
         self.trade(graph=gr, edge_mat=edge_mat, node_list=node_list, it=it, gen_ledger=gen_ledger)
 
@@ -93,13 +91,14 @@ class ExchangeSimulation:
             gr.nodes[n].setdefault('gains_losses', []).append(gain_loss)
 
         # Stingy behavior: check and apply using separate method
-        self.check_and_apply_stingy_behavior(gr, it, edge_mat, node_list)
+        if stingy_behavior_enabled:
+            self.check_and_apply_stingy_behavior(gr, it, edge_mat, node_list)
 
         Utils.calc_and_print_percent_change(g=gr, previous_money=previous_money, it=it)
         node_colors = [gr.nodes[n]["money"] for n in node_list]
         states.append((gr.copy(), node_colors.copy()))
 
-    def run_simulation(self, gen_ledger: bool, iterations: int = 10, seed: int = 42, control_random: bool = False):
+    def run_simulation(self, gen_ledger: bool, iterations: int = 10, seed: int = 42, control_random: bool = False, stingy_behavior_enabled: bool = False):
         g, edge_mat, node_list = Setup.gen_graph(t=P.GRAPH_TYPE, n_nodes=P.NUM_NODES, seed=seed, control_random=control_random)
         # Initialize gains/losses history and store original money for each node
         og_money_amounts = {node: data["money"] for node, data in g.nodes(data=True)}
@@ -107,7 +106,7 @@ class ExchangeSimulation:
         layout = layout_functions.get(P.LAYOUT, viz.spring_lay)(g)
         states = [(g.copy(), node_colors.copy())]
         for it in range(iterations):
-            self.trade_cycle(gr=g, it=it, edge_mat=edge_mat, node_list=node_list, gen_ledger=gen_ledger, states=states)
+            self.trade_cycle(gr=g, it=it, edge_mat=edge_mat, node_list=node_list, gen_ledger=gen_ledger, states=states, stingy_behavior_enabled=stingy_behavior_enabled)
         Utils.calc_and_print_percent_change(g=g, previous_money=og_money_amounts, it=None)
         last_graph = states[-1][0]
         end_monies = [last_graph.nodes[n]["money"] for n in node_list]
