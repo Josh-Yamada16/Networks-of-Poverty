@@ -8,3 +8,17 @@ of different network-effect mechanisms.
 4. Differentiate among types of relationships. 
 5. Study ways in which institutions condition the impact of network effects on inequality. 
 6. Explore cases in which network effects may reduce inequality. 
+
+
+Learn about web scrapping on social media sites.
+
+Look/scrape through social media (Facebook, Discord, X, reddit) for people connected to people that have poverty-like behavior.
+- Data like in the Urban Structures data
+- Create a network based on real data
+    - school districts
+    - property taxes
+    - phone minutes (some countries)
+    - kaggle
+    - Stanford
+
+Synthesize: configuration model
