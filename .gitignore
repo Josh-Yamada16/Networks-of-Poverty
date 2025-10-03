@@ -54,17 +54,7 @@ networkSim/networkSimEnv/
 
 # VS Code
 .vscode/
-
-# macOS
-.DS_Store
-
-# Windows
-Thumbs.db
-ehthumbs.db
-
-# Logs
-*.log
-
-# Other
-*.bak
-*.swp
+{.venv/
+venv/
+env/
+ENV/}

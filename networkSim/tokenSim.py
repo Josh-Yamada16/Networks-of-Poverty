@@ -5,7 +5,7 @@ from setup import Setup
 from visualizer import Visualization as viz
 from utils import Utils
 from ledger import Ledger
-from typing import Dict
+from basicToken import Token, TokenType
 
 layout_functions = {
     'spring': viz.spring_lay,
@@ -46,6 +46,12 @@ class ExchangeSimulation:
             edge_mat[:] = Setup.generate_edge_matrix(node_neighbors=node_neighbors, node_names=node_list)
             # print(Utils.calc_eigenvector(edge_mat))
 
+    def exchange_trade_tokens(self, graph: nx.Graph, node_list: list[str], it: int):
+        whole_ledger = self.ledger.df
+        most_recent_transactions_df = whole_ledger.loc[whole_ledger['iteration'] == it]
+        for node in node_list:
+            trade_tok = Token(name="TradeToken", token_type=TokenType.TRUST, value=1.0, issuer=node)
+
     def update_ledger(self, amount, from_node, to_node, method, it):
         self.ledger.record(
             iteration=it,
@@ -80,6 +86,7 @@ class ExchangeSimulation:
             graph.nodes[node]["money"] = result[i]
         if gen_ledger:
             self.ledger_logic(graph=graph, trans=trans, node_list=node_list, it=it)
+        self.exchange_trade_tokens(graph, node_list, it)
 
     def trade_cycle(self, gr: nx.Graph, it: int, edge_mat: np.ndarray, node_list: list[str], gen_ledger: bool, stingy_behavior_enabled: bool, states):
         previous_money = {n: gr.nodes[n]['money'] for n in node_list}
