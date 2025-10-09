@@ -11,20 +11,26 @@ GENERATE_LEDGER = True  # Whether to generate a ledger of transactions
 MAX_STINGY_BEHAVIORS = 100  # Maximum number of stingy behaviors allowed in the simulation
 NUM_ITERATIONS = 40  # Number of iterations for the token exchange simulation
 LAYOUT = "spring"  # Layout for the graph visualization (e.g., "spring", "circular")
-DRAW_INITIAL_GRAPH = False # Whether to draw the initial graph
+DRAW_INITIAL_GRAPH = True # Whether to draw the initial graph
 
 # Parameters for Graph Generation
-NUM_NODES = 10  # Number of nodes in the graph
-GRAPH_TYPE = "dir"  # Type of graph to generate (e.g., "erd", "wat", "bara", "cir", "lat", "barb", "sto", "reg")
+NUM_NODES = 12  # Number of nodes in the graph (matching your custom graph)
+GRAPH_TYPE = "custom"  # Type of graph to generate (e.g., "erd", "wat", "bara", "cir", "lat", "barb", "sto", "reg")
 CUSTOM_GRAPH = {
-    0: [1],
-    1: [0, 2],
-    2: [0, 3],
-    3: [0, 4],
-    4: [0, 5],
-    5: [0]
+    'a': ['e', 'f'],
+    'b': ['a'],
+    'c': ['d', 'e'],
+    'd': ['h', 'i'],
+    'e': ['d'],
+    'f': ['b', 'c'],
+    'g': ['d'],
+    'h': ['i'],
+    'i': ['l'],
+    'j': ['f', 'h', 'k'],
+    'k': ['i', 'j'],
+    'l': ['g']
 }
-CUSTOM_MONEY = [1, 0, 0, 0, 0, 0]  # Custom money distribution for the custom graph
+CUSTOM_MONEY = [100, 50, 75, 200, 150, 80, 120, 90, 60, 110, 130, 70]  # Custom money distribution for the custom graph (12 nodes)
 
 BLOCK_MEANS = {0: 100, 1: 200, 2: 50, 3: 400, 4: 500}
 STD_DEV = 15  # Standard deviation for money distribution in stochastic block model
