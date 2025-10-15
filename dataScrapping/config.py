@@ -51,6 +51,26 @@ INCLUDE_FLAIR = True  # Include post flair/tags
 INCLUDE_SELFTEXT = False  # Include post body text (can be very long)
 
 # =============================================================================
+# NETWORK ANALYSIS SETTINGS
+# =============================================================================
+# Comment collection settings
+INCLUDE_COMMENTS = True  # Set to True to fetch full comment trees (required for network analysis)
+MAX_COMMENT_DEPTH = 10  # Maximum depth to traverse in comment tree (prevents infinite recursion)
+
+# Network building settings
+BUILD_NETWORK = True  # Set to True to build interaction networks from comments
+SAVE_NETWORK = False  # Set to True to save network data to files
+
+# Network types to create
+INCLUDE_REPLY_NETWORK = True  # Create edges for direct replies (User A -> User B)
+INCLUDE_COPARTICIPATION_NETWORK = True  # Create edges for users commenting on same posts
+
+# Network file formats
+SAVE_GRAPHML = True  # Save as GraphML (can be opened in Gephi, Cytoscape)
+SAVE_EDGE_LISTS = True  # Save edge lists as CSV files
+SAVE_USER_SUMMARY = True  # Save user participation statistics
+
+# =============================================================================
 # MULTIPLE SUBREDDIT SETTINGS
 # =============================================================================
 # Set to True to scrape from multiple subreddits

@@ -5,6 +5,7 @@ import json
 import csv
 import time
 from datetime import datetime
+from collections import defaultdict
 from config import *  # Import all configuration settings
 
 # Initialize Reddit API with credentials from config
@@ -14,9 +15,179 @@ reddit = praw.Reddit(
     user_agent=USER_AGENT
 )
 
-def get_reddit_data(subreddit_name=None, num_posts=None, sort_by=None, verbose=None, time_filter=None):
+def get_comment_tree(comment, depth=0, max_depth=10):
+    """
+    Recursively collect all comments and their replies, creating a hierarchical structure.
+    
+    Args:
+        comment: PRAW comment object
+        depth: Current depth in the comment tree
+        max_depth: Maximum depth to traverse (prevents infinite recursion)
+    
+    Returns:
+        Dictionary containing comment data and nested replies
+    """
+    # Handle deleted comments
+    author = str(comment.author) if comment.author else '[deleted]'
+    
+    comment_data = {
+        'id': comment.id,
+        'author': author,
+        'body': comment.body,
+        'score': comment.score,
+        'created_utc': comment.created_utc,
+        'created_date': datetime.fromtimestamp(comment.created_utc).strftime('%Y-%m-%d %H:%M:%S'),
+        'parent_id': comment.parent_id,  # Links to parent comment or post
+        'depth': depth,
+        'replies': []
+    }
+    
+    # Recursively get all nested replies
+    if depth < max_depth:
+        try:
+            # Replace MoreComments objects to get actual comments
+            comment.replies.replace_more(limit=0)
+            for reply in comment.replies:
+                reply_data = get_comment_tree(reply, depth + 1, max_depth)
+                comment_data['replies'].append(reply_data)
+        except Exception as e:
+            print(f"Error fetching replies for comment {comment.id}: {e}")
+    
+    return comment_data
+
+def build_interaction_network(posts_with_comments):
+    """
+    Build a user interaction network from posts and comments.
+    Creates edges between users based on:
+    1. Direct replies (User A replies to User B)
+    2. Co-participation (Users comment on the same post)
+    
+    Args:
+        posts_with_comments: List of posts with full comment trees
+    
+    Returns:
+        Dictionary containing NetworkX graph and edge list
+    """
+    G = nx.DiGraph()  # Directed graph for reply relationships
+    edges = []  # List of all interactions
+    user_posts = defaultdict(list)  # Track which posts each user participated in
+    
+    for post in posts_with_comments:
+        post_id = post['id']
+        post_author = post.get('author', '[deleted]')
+        
+        # Add post author as a node
+        if post_author != '[deleted]':
+            G.add_node(post_author, node_type='user')
+            user_posts[post_author].append(post_id)
+        
+        # Process all comments to find interactions
+        def process_comment_for_network(comment_data, parent_author=None):
+            """Recursively process comments to build network edges"""
+            author = comment_data['author']
+            
+            # Skip deleted users
+            if author == '[deleted]':
+                return
+            
+            # Add user as node
+            if not G.has_node(author):
+                G.add_node(author, node_type='user')
+            
+            # Track user participation in this post
+            if post_id not in user_posts[author]:
+                user_posts[author].append(post_id)
+            
+            # Create edge for direct reply
+            if parent_author and parent_author != '[deleted]' and parent_author != author:
+                # Add or update edge weight (number of interactions)
+                if G.has_edge(author, parent_author):
+                    G[author][parent_author]['weight'] += 1
+                    G[author][parent_author]['interactions'].append({
+                        'type': 'reply',
+                        'post_id': post_id,
+                        'comment_id': comment_data['id'],
+                        'timestamp': comment_data['created_utc']
+                    })
+                else:
+                    G.add_edge(author, parent_author, 
+                             weight=1,
+                             edge_type='reply',
+                             interactions=[{
+                                 'type': 'reply',
+                                 'post_id': post_id,
+                                 'comment_id': comment_data['id'],
+                                 'timestamp': comment_data['created_utc']
+                             }])
+                
+                # Add to edge list
+                edges.append({
+                    'from': author,
+                    'to': parent_author,
+                    'type': 'reply',
+                    'post_id': post_id,
+                    'comment_id': comment_data['id'],
+                    'score': comment_data['score'],
+                    'timestamp': comment_data['created_utc']
+                })
+            
+            # Recursively process replies
+            for reply in comment_data.get('replies', []):
+                process_comment_for_network(reply, parent_author=author)
+        
+        # Process comments (first level replies to post)
+        for comment in post.get('comments', []):
+            # Parent of top-level comment is the post author
+            process_comment_for_network(comment, parent_author=post_author)
+    
+    # Create co-participation edges (users who commented on same posts)
+    co_participation_edges = []
+    for post_id, participants in _get_post_participants(user_posts).items():
+        participants = list(participants)
+        for i, user1 in enumerate(participants):
+            for user2 in participants[i+1:]:
+                co_participation_edges.append({
+                    'from': user1,
+                    'to': user2,
+                    'type': 'co_participation',
+                    'post_id': post_id
+                })
+    
+    return {
+        'graph': G,
+        'reply_edges': edges,
+        'co_participation_edges': co_participation_edges,
+        'user_posts': dict(user_posts),
+        'stats': {
+            'num_users': G.number_of_nodes(),
+            'num_reply_edges': len(edges),
+            'num_co_participation_edges': len(co_participation_edges)
+        }
+    }
+
+def _get_post_participants(user_posts):
+    """Helper function to invert user_posts mapping to post_participants"""
+    post_participants = defaultdict(set)
+    for user, posts in user_posts.items():
+        for post_id in posts:
+            post_participants[post_id].add(user)
+    return post_participants
+
+def get_reddit_data(subreddit_name=None, num_posts=None, sort_by=None, verbose=None, time_filter=None, include_comments=True, max_comment_depth=10):
     """
     Get Reddit posts with parameters from config file or overrides
+    
+    Args:
+        subreddit_name: Name of subreddit to scrape
+        num_posts: Number of posts to collect
+        sort_by: Sorting method ('top', 'comments', 'interaction', 'hot', 'controversial')
+        verbose: Print progress messages
+        time_filter: Time filter for sorting ('hour', 'day', 'week', 'month', 'year', 'all')
+        include_comments: Whether to fetch full comment trees (default: True)
+        max_comment_depth: Maximum depth for comment tree traversal (default: 10)
+    
+    Returns:
+        List of posts with optional comment trees
     """
     # Use config defaults if not specified
     subreddit_name = subreddit_name or SUBREDDIT_NAME
@@ -81,6 +252,34 @@ def get_reddit_data(subreddit_name=None, num_posts=None, sort_by=None, verbose=N
         if INCLUDE_SELFTEXT:
             post_data['selftext'] = post.selftext
         
+        # Fetch full comment tree if requested
+        if include_comments and post.num_comments > 0:
+            if verbose:
+                print(f"  Fetching {post.num_comments} comments for: {post.title[:50]}...")
+            
+            try:
+                # Get the full post with comments
+                post.comments.replace_more(limit=0)  # Remove "load more comments" placeholders
+                
+                comments = []
+                for comment in post.comments:
+                    comment_tree = get_comment_tree(comment, depth=0, max_depth=max_comment_depth)
+                    comments.append(comment_tree)
+                
+                post_data['comments'] = comments
+                post_data['total_comments_collected'] = _count_comments(comments)
+                
+                if verbose:
+                    print(f"    Collected {post_data['total_comments_collected']} comments (depth: {max_comment_depth})")
+                
+            except Exception as e:
+                print(f"  Error fetching comments for post {post.id}: {e}")
+                post_data['comments'] = []
+                post_data['total_comments_collected'] = 0
+        else:
+            post_data['comments'] = []
+            post_data['total_comments_collected'] = 0
+        
         all_posts.append(post_data)
         
         # Add delay if specified in config
@@ -106,6 +305,13 @@ def get_reddit_data(subreddit_name=None, num_posts=None, sort_by=None, verbose=N
             print(f"  Score: {post_data['score']}, Comments: {post_data['num_comments']}, Interaction: {post_data['interaction_score']}")
     
     return posts
+
+def _count_comments(comments):
+    """Helper function to recursively count total comments in a tree"""
+    count = len(comments)
+    for comment in comments:
+        count += _count_comments(comment.get('replies', []))
+    return count
 
 def get_multi_subreddit_data():
     """Get data from multiple subreddits as specified in config"""
@@ -146,10 +352,19 @@ def save_posts_to_file(posts, filename=None, format_type=None):
     elif format_type == 'csv':
         filepath = f"{filename}_{timestamp}.csv"
         if posts:
+            # For CSV, we'll flatten the data (excluding nested comments)
+            flattened_posts = []
+            for post in posts:
+                post_copy = post.copy()
+                # Remove nested structures for CSV
+                post_copy.pop('comments', None)
+                post_copy.pop('total_comments_collected', None)
+                flattened_posts.append(post_copy)
+            
             with open(filepath, 'w', newline='', encoding='utf-8') as f:
-                writer = csv.DictWriter(f, fieldnames=posts[0].keys())
+                writer = csv.DictWriter(f, fieldnames=flattened_posts[0].keys())
                 writer.writeheader()
-                writer.writerows(posts)
+                writer.writerows(flattened_posts)
     
     elif format_type == 'txt':
         filepath = f"{filename}_{timestamp}.txt"
@@ -169,6 +384,103 @@ def save_posts_to_file(posts, filename=None, format_type=None):
     
     print(f"Saved {len(posts)} posts to {filepath}")
     return filepath
+
+def save_network_data(network_data, base_filename="reddit_network"):
+    """
+    Save interaction network data in multiple formats for analysis.
+    
+    Args:
+        network_data: Dictionary containing graph, edges, and stats from build_interaction_network()
+        base_filename: Base name for output files
+    
+    Returns:
+        Dictionary with paths to all saved files
+    """
+    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+    saved_files = {}
+    
+    # 1. Save NetworkX graph as GraphML (can be opened in Gephi, Cytoscape, etc.)
+    graph_file = f"{base_filename}_graph_{timestamp}.graphml"
+    nx.write_graphml(network_data['graph'], graph_file)
+    saved_files['graph'] = graph_file
+    print(f"Saved NetworkX graph to {graph_file}")
+    
+    # 2. Save NetworkX graph as pickle (for Python analysis)
+    pickle_file = f"{base_filename}_graph_{timestamp}.gpickle"
+    nx.write_gpickle(network_data['graph'], pickle_file)
+    saved_files['pickle'] = pickle_file
+    print(f"Saved graph pickle to {pickle_file}")
+    
+    # 3. Save reply edges as CSV
+    reply_edges_file = f"{base_filename}_reply_edges_{timestamp}.csv"
+    if network_data['reply_edges']:
+        with open(reply_edges_file, 'w', newline='', encoding='utf-8') as f:
+            fieldnames = ['from', 'to', 'type', 'post_id', 'comment_id', 'score', 'timestamp']
+            writer = csv.DictWriter(f, fieldnames=fieldnames)
+            writer.writeheader()
+            writer.writerows(network_data['reply_edges'])
+        saved_files['reply_edges'] = reply_edges_file
+        print(f"Saved {len(network_data['reply_edges'])} reply edges to {reply_edges_file}")
+    
+    # 4. Save co-participation edges as CSV
+    copart_edges_file = f"{base_filename}_coparticipation_edges_{timestamp}.csv"
+    if network_data['co_participation_edges']:
+        with open(copart_edges_file, 'w', newline='', encoding='utf-8') as f:
+            fieldnames = ['from', 'to', 'type', 'post_id']
+            writer = csv.DictWriter(f, fieldnames=fieldnames)
+            writer.writeheader()
+            writer.writerows(network_data['co_participation_edges'])
+        saved_files['coparticipation_edges'] = copart_edges_file
+        print(f"Saved {len(network_data['co_participation_edges'])} co-participation edges to {copart_edges_file}")
+    
+    # 5. Save network statistics as JSON
+    stats_file = f"{base_filename}_stats_{timestamp}.json"
+    stats = {
+        **network_data['stats'],
+        'graph_metrics': {
+            'density': nx.density(network_data['graph']),
+            'num_weakly_connected_components': nx.number_weakly_connected_components(network_data['graph']),
+            'num_strongly_connected_components': nx.number_strongly_connected_components(network_data['graph']),
+        },
+        'top_users_by_degree': _get_top_nodes_by_degree(network_data['graph'], top_n=20),
+        'timestamp': timestamp
+    }
+    
+    with open(stats_file, 'w', encoding='utf-8') as f:
+        json.dump(stats, f, indent=2)
+    saved_files['stats'] = stats_file
+    print(f"Saved network statistics to {stats_file}")
+    
+    # 6. Save user participation summary
+    user_summary_file = f"{base_filename}_user_summary_{timestamp}.csv"
+    user_summary = []
+    for user, posts in network_data['user_posts'].items():
+        if user != '[deleted]':
+            user_summary.append({
+                'user': user,
+                'num_posts_participated': len(posts),
+                'in_degree': network_data['graph'].in_degree(user) if network_data['graph'].has_node(user) else 0,
+                'out_degree': network_data['graph'].out_degree(user) if network_data['graph'].has_node(user) else 0
+            })
+    
+    user_summary.sort(key=lambda x: x['num_posts_participated'], reverse=True)
+    
+    with open(user_summary_file, 'w', newline='', encoding='utf-8') as f:
+        if user_summary:
+            writer = csv.DictWriter(f, fieldnames=['user', 'num_posts_participated', 'in_degree', 'out_degree'])
+            writer.writeheader()
+            writer.writerows(user_summary)
+    saved_files['user_summary'] = user_summary_file
+    print(f"Saved user summary to {user_summary_file}")
+    
+    return saved_files
+
+def _get_top_nodes_by_degree(graph, top_n=10):
+    """Get top nodes by total degree (in + out)"""
+    degree_dict = {node: graph.in_degree(node) + graph.out_degree(node) 
+                   for node in graph.nodes() if node != '[deleted]'}
+    sorted_nodes = sorted(degree_dict.items(), key=lambda x: x[1], reverse=True)
+    return [{'user': node, 'degree': degree} for node, degree in sorted_nodes[:top_n]]
 
 def create_graph(posts):
     """Create a network graph from posts"""
@@ -226,17 +538,40 @@ if __name__ == "__main__":
         if MULTI_SUBREDDIT:
             posts = get_multi_subreddit_data()
         else:
-            posts = get_reddit_data()
+            # Get posts with comments if network analysis is enabled
+            include_comments = INCLUDE_COMMENTS if 'INCLUDE_COMMENTS' in dir() else True
+            max_depth = MAX_COMMENT_DEPTH if 'MAX_COMMENT_DEPTH' in dir() else 10
+            posts = get_reddit_data(include_comments=include_comments, max_comment_depth=max_depth)
         
         # Print results if enabled
         print_posts(posts)
         
-        # Save to file if enabled
+        # Save posts to file if enabled
         if SAVE_TO_FILE and posts:
             save_posts_to_file(posts)
+        
+        # Build and save interaction network if enabled
+        build_network = BUILD_NETWORK if 'BUILD_NETWORK' in dir() else False
+        save_network = SAVE_NETWORK if 'SAVE_NETWORK' in dir() else False
+        
+        if build_network and posts:
+            print("\n--- Building Interaction Network ---")
+            network_data = build_interaction_network(posts)
+            
+            print(f"\nNetwork Statistics:")
+            print(f"  Total users: {network_data['stats']['num_users']}")
+            print(f"  Reply interactions: {network_data['stats']['num_reply_edges']}")
+            print(f"  Co-participation edges: {network_data['stats']['num_co_participation_edges']}")
+            
+            if save_network:
+                print("\n--- Saving Network Data ---")
+                saved_files = save_network_data(network_data)
+                print(f"\nNetwork analysis complete! Saved {len(saved_files)} files.")
         
         print(f"\nScraping completed! Found {len(posts)} posts.")
         
     except Exception as e:
         print(f"Error during scraping: {e}")
         print("Check your Reddit API credentials and network connection.")
+        import traceback
+        traceback.print_exc()
