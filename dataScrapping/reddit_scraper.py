@@ -3,6 +3,7 @@ import requests
 import networkx as nx
 import json
 import csv
+import pickle
 import time
 from datetime import datetime
 from collections import defaultdict
@@ -400,14 +401,23 @@ def save_network_data(network_data, base_filename="reddit_network"):
     saved_files = {}
     
     # 1. Save NetworkX graph as GraphML (can be opened in Gephi, Cytoscape, etc.)
+    # GraphML doesn't support list attributes, so we need to create a clean copy
     graph_file = f"{base_filename}_graph_{timestamp}.graphml"
-    nx.write_graphml(network_data['graph'], graph_file)
+    G_clean = network_data['graph'].copy()
+    
+    # Remove 'interactions' attribute from edges (it's a list, not supported by GraphML)
+    for u, v, data in G_clean.edges(data=True):
+        if 'interactions' in data:
+            del data['interactions']
+    
+    nx.write_graphml(G_clean, graph_file)
     saved_files['graph'] = graph_file
     print(f"Saved NetworkX graph to {graph_file}")
     
     # 2. Save NetworkX graph as pickle (for Python analysis)
     pickle_file = f"{base_filename}_graph_{timestamp}.gpickle"
-    nx.write_gpickle(network_data['graph'], pickle_file)
+    with open(pickle_file, 'wb') as f:
+        pickle.dump(network_data['graph'], f)
     saved_files['pickle'] = pickle_file
     print(f"Saved graph pickle to {pickle_file}")
     

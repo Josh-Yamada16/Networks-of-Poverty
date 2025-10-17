@@ -20,7 +20,7 @@ def main():
     print("Step 1: Scraping posts with full comment trees...")
     posts = rs.get_reddit_data(
         subreddit_name='povertyfinance',  # Target subreddit
-        num_posts=5,  # Number of posts to analyze
+        num_posts=20,  # Number of posts to analyze
         sort_by='comments',  # Get most commented posts
         time_filter='week',  # From the past week
         include_comments=True,  # IMPORTANT: Fetch full comment trees
