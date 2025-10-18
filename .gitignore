@@ -58,3 +58,5 @@ networkSim/networkSimEnv/
 venv/
 env/
 ENV/}
+
+dataScrapping/config.py
