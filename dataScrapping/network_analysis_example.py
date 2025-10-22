@@ -16,15 +16,22 @@ import matplotlib.pyplot as plt
 def main():
     print("=== Reddit Social Network Analysis Example ===\n")
     
+    # Configuration
+    subreddit_name = 'poverty'
+    num_posts = 100
+    sort_by = 'comments'
+    time_filter = 'all'
+    max_comment_depth = 100  # How deep to traverse comment trees
+    
     # Step 1: Scrape posts with comments
     print("Step 1: Scraping posts with full comment trees...")
     posts = rs.get_reddit_data(
-        subreddit_name='povertyfinance',  # Target subreddit
-        num_posts=20,  # Number of posts to analyze
-        sort_by='comments',  # Get most commented posts
-        time_filter='week',  # From the past week
+        subreddit_name=subreddit_name,  # Target subreddit
+        num_posts=num_posts,  # Number of posts to analyze
+        sort_by=sort_by,  # Get 'top', 'hot', 'new', 'rising', 'controversial', 'comments', 'interaction'
+        time_filter=time_filter,  # From 'hour', 'day', 'week', 'month', 'year', 'all'
         include_comments=True,  # IMPORTANT: Fetch full comment trees
-        max_comment_depth=10,  # How deep to traverse replies
+        max_comment_depth=max_comment_depth,  # How deep to traverse replies
         verbose=True  # Show progress
     )
     
@@ -69,7 +76,35 @@ def main():
     
     # Step 4: Save network data
     print("\n=== Saving Network Data ===")
-    saved_files = rs.save_network_data(network_data, base_filename="poverty_network")
+    # Create organized output folder structure
+    import os
+    from datetime import datetime
+    
+    # Option: Organize by subreddit and timestamp
+    timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+    output_folder = f"results/{subreddit_name}/{timestamp}"
+    os.makedirs(output_folder, exist_ok=True)  # Create folder if it doesn't exist
+    
+    # Create a descriptive filename
+    base_filename = f"{output_folder}/{subreddit_name}_{sort_by}_{time_filter}_{num_posts}posts"
+    
+    saved_files = rs.save_network_data(network_data, base_filename=base_filename)
+    
+    # Save analysis metadata
+    metadata = {
+        'timestamp': timestamp,
+        'subreddit': subreddit_name,
+        'num_posts': num_posts,
+        'sort_by': sort_by,
+        'time_filter': time_filter,
+        'total_users': network_data['stats']['num_users'],
+        'reply_interactions': network_data['stats']['num_reply_edges'],
+        'co_participation_edges': network_data['stats']['num_co_participation_edges']
+    }
+    import json
+    with open(f"{output_folder}/analysis_metadata.json", 'w') as f:
+        json.dump(metadata, f, indent=2)
+    print(f"Saved analysis metadata to {output_folder}/analysis_metadata.json")
     
     print("\n=== Files Created ===")
     for file_type, filepath in saved_files.items():

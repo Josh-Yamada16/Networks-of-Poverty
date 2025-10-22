@@ -48,6 +48,16 @@ coverage.xml
 .env
 .venv
 venv/
+
+# Large data files - keep locally, don't push to GitHub
+results/
+*.csv
+*.gpickle
+*.graphml
+
+# But keep small metadata files
+!*_metadata.json
+!*_stats.json
 ENV/
 env/
 networkSim/networkSimEnv/
