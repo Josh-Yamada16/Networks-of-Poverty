@@ -71,6 +71,28 @@ SAVE_EDGE_LISTS = True  # Save edge lists as CSV files
 SAVE_USER_SUMMARY = True  # Save user participation statistics
 
 # =============================================================================
+# VISUALIZATION AND OUTPUT SETTINGS
+# =============================================================================
+# Gephi visualization preparation
+PREPARE_GEPHI_VISUALIZATION = True  # Generate enhanced GraphML with colors and sizes for Gephi
+
+# Individual Gephi file outputs
+SAVE_GEPHI_GRAPHML = True  # Save enhanced GraphML file with node colors/sizes
+SAVE_NODE_ATTRIBUTES_CSV = True  # Save node attributes as CSV
+SAVE_EDGE_ATTRIBUTES_CSV = True  # Save edge attributes as CSV
+SAVE_COMMUNITY_SUMMARY = True  # Save community analysis as JSON
+
+# Standard network output (these are separate from Gephi files)
+SAVE_PICKLE_GRAPH = True  # Save NetworkX graph as Python pickle (for programmatic access)
+SAVE_REPLY_EDGES_CSV = True  # Save direct reply interactions as CSV
+SAVE_COPARTICIPATION_CSV = True  # Save co-participation edges as CSV
+SAVE_NETWORK_STATS_JSON = True  # Save network statistics as JSON
+
+# Analysis results display
+PRINT_ANALYSIS_RESULTS = True  # Print analysis to console (strongest relationships, helpers, etc.)
+SAVE_ANALYSIS_RESULTS = False  # Save analysis results to separate file
+
+# =============================================================================
 # MULTIPLE SUBREDDIT SETTINGS
 # =============================================================================
 # Set to True to scrape from multiple subreddits

@@ -12,6 +12,10 @@ This script shows how to:
 import reddit_scraper as rs
 import networkx as nx
 import matplotlib.pyplot as plt
+from config import (
+    SAVE_PICKLE_GRAPH, SAVE_REPLY_EDGES_CSV, SAVE_COPARTICIPATION_CSV,
+    SAVE_NETWORK_STATS_JSON, SAVE_GEPHI_GRAPHML
+)
 
 def main():
     print("=== Reddit Social Network Analysis Example ===\n")
@@ -88,7 +92,15 @@ def main():
     # Create a descriptive filename
     base_filename = f"{output_folder}/{subreddit_name}_{sort_by}_{time_filter}_{num_posts}posts"
     
-    saved_files = rs.save_network_data(network_data, base_filename=base_filename)
+    saved_files = rs.save_network_data(
+        network_data, 
+        base_filename=base_filename,
+        save_pickle=SAVE_PICKLE_GRAPH,
+        save_reply_edges=SAVE_REPLY_EDGES_CSV,
+        save_coparticipation=SAVE_COPARTICIPATION_CSV,
+        save_stats=SAVE_NETWORK_STATS_JSON,
+        save_graphml=SAVE_GEPHI_GRAPHML
+    )
     
     # Save analysis metadata
     metadata = {

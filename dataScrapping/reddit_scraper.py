@@ -56,18 +56,22 @@ def get_comment_tree(comment, depth=0, max_depth=10):
     
     return comment_data
 
-def build_interaction_network(posts_with_comments):
+def build_interaction_network(posts_with_comments, edge_strength_threshold=0.0):
     """
-    Build a user interaction network from posts and comments.
+    Build a user interaction network from posts and comments with relationship strength metrics.
     Creates edges between users based on:
     1. Direct replies (User A replies to User B)
     2. Co-participation (Users comment on the same post)
+    3. Mutual interactions (bidirectional engagement)
+    4. Sustained engagement (shared posts over time)
+    5. Common neighbors (shared connections)
     
     Args:
         posts_with_comments: List of posts with full comment trees
+        edge_strength_threshold: Minimum edge strength to include (default: 0.0, keep all)
     
     Returns:
-        Dictionary containing NetworkX graph and edge list
+        Dictionary containing NetworkX graph with enhanced edge attributes and relationship metrics
     """
     G = nx.DiGraph()  # Directed graph for reply relationships
     edges = []  # List of all interactions
@@ -108,17 +112,20 @@ def build_interaction_network(posts_with_comments):
                         'type': 'reply',
                         'post_id': post_id,
                         'comment_id': comment_data['id'],
-                        'timestamp': comment_data['created_utc']
+                        'timestamp': comment_data['created_utc'],
+                        'depth': comment_data.get('depth', 0)
                     })
                 else:
                     G.add_edge(author, parent_author, 
                              weight=1,
                              edge_type='reply',
+                             relationship_strength=0,  # Will be calculated after all edges added
                              interactions=[{
                                  'type': 'reply',
                                  'post_id': post_id,
                                  'comment_id': comment_data['id'],
-                                 'timestamp': comment_data['created_utc']
+                                 'timestamp': comment_data['created_utc'],
+                                 'depth': comment_data.get('depth', 0)
                              }])
                 
                 # Add to edge list
@@ -154,15 +161,121 @@ def build_interaction_network(posts_with_comments):
                     'post_id': post_id
                 })
     
+    # Calculate relationship strength metrics
+    mutual_interactions = []  # Bidirectional edges
+    strong_relationships = []  # High strength edges
+    user_metrics = {}  # Per-user helper/helped ratios
+    
+    # First pass: calculate relationship strength for each edge using 5-factor model
+    for edge in G.edges():
+        user1, user2 = edge
+        edge_data = G[user1][user2]
+        
+        # Factor 1: Base strength from interaction count (weight)
+        strength = edge_data.get('weight', 1)
+        
+        # Factor 2: Mutual interaction bonus (1.5x if bidirectional)
+        if G.has_edge(user2, user1):
+            strength *= 1.5
+        
+        # Factor 3: Sustained engagement - shared posts over time
+        # Count how many distinct posts this edge appears in
+        interactions = edge_data.get('interactions', [])
+        shared_posts = len(set(i.get('post_id') for i in interactions if i.get('post_id')))
+        sustained_engagement_bonus = shared_posts * 0.5
+        strength += sustained_engagement_bonus
+        
+        # Factor 4: Common neighbors bonus
+        # Find users that both user1 and user2 interact with
+        user1_neighbors = set(G.successors(user1)) | set(G.predecessors(user1))
+        user2_neighbors = set(G.successors(user2)) | set(G.predecessors(user2))
+        common_neighbors = len(user1_neighbors & user2_neighbors)
+        common_neighbors_bonus = common_neighbors * 0.3
+        strength += common_neighbors_bonus
+        
+        # Factor 5: Conversation depth - based on max depth in replies
+        max_depth = 0
+        for interaction in interactions:
+            if 'depth' in interaction:
+                max_depth = max(max_depth, interaction.get('depth', 0))
+        # Deeper conversations indicate more engagement
+        depth_bonus = max(0, (max_depth - 1) * 0.2)  # Start bonus at depth 2
+        strength += depth_bonus
+        
+        # Set the relationship_strength attribute with full 5-factor calculation
+        G[user1][user2]['relationship_strength'] = strength
+        G[user1][user2]['strength_components'] = {
+            'base_weight': edge_data.get('weight', 1),
+            'mutual_bonus': 0.5 * edge_data.get('weight', 1) if G.has_edge(user2, user1) else 0,
+            'sustained_engagement': sustained_engagement_bonus,
+            'common_neighbors': common_neighbors_bonus,
+            'conversation_depth': depth_bonus
+        }
+    
+    # Second pass: build user metrics
+    for user in G.nodes():
+        out_degree = G.out_degree(user)  # Posts to others (helping)
+        in_degree = G.in_degree(user)    # Receives posts from others (receiving help)
+        
+        # Helper/helped ratio: how often user initiates vs receives
+        total_interactions = out_degree + in_degree
+        if total_interactions > 0:
+            helper_ratio = out_degree / total_interactions
+        else:
+            helper_ratio = 0.0
+        
+        user_metrics[user] = {
+            'out_degree': out_degree,
+            'in_degree': in_degree,
+            'helper_ratio': helper_ratio,
+            'total_interactions': total_interactions,
+            'helped': out_degree,  # Alias for out_degree
+            'received_help': in_degree  # Alias for in_degree
+        }
+        
+        # Add attributes to graph nodes for easy access
+        G.nodes[user]['helper_ratio'] = helper_ratio
+        G.nodes[user]['helped_count'] = out_degree
+        G.nodes[user]['received_help_count'] = in_degree
+    
+    # Find mutual interactions (bidirectional edges)
+    for edge in G.edges():
+        user1, user2 = edge
+        if G.has_edge(user2, user1):
+            # Avoid duplicates by only counting when user1 < user2 alphabetically
+            if user1 < user2:
+                mutual_interactions.append({
+                    'users': (user1, user2),
+                    'mutual': True
+                })
+    
+    # Find strong relationships (strength > threshold)
+    for edge in G.edges(data=True):
+        user1, user2 = edge[0], edge[1]
+        edge_data = edge[2]
+        
+        strength = edge_data.get('relationship_strength', 0)
+        if strength > edge_strength_threshold:
+            strong_relationships.append({
+                'users': (user1, user2),
+                'strength': strength,
+                'interactions': len(edge_data.get('interactions', []))
+            })
+    
     return {
         'graph': G,
         'reply_edges': edges,
         'co_participation_edges': co_participation_edges,
         'user_posts': dict(user_posts),
+        'mutual_interactions': mutual_interactions,
+        'user_metrics': user_metrics,
+        'interaction_strength': {edge: G[edge[0]][edge[1]].get('relationship_strength', 0) for edge in G.edges()},
         'stats': {
             'num_users': G.number_of_nodes(),
             'num_reply_edges': len(edges),
-            'num_co_participation_edges': len(co_participation_edges)
+            'num_co_participation_edges': len(co_participation_edges),
+            'num_mutual_pairs': len(mutual_interactions),
+            'num_strong_relationships': len(strong_relationships)
         }
     }
 
@@ -256,7 +369,13 @@ def get_reddit_data(subreddit_name=None, num_posts=None, sort_by=None, verbose=N
         # Fetch full comment tree if requested
         if include_comments and post.num_comments > 0:
             if verbose:
-                print(f"  Fetching {post.num_comments} comments for: {post.title[:50]}...")
+                # Handle Unicode properly for console output
+                title = post.title[:50]
+                try:
+                    print(f"  Fetching {post.num_comments} comments for: {title}...")
+                except UnicodeEncodeError:
+                    # Fallback for encoding errors in Windows console
+                    print(f"  Fetching {post.num_comments} comments for: [post with unicode characters]")
             
             try:
                 # Get the full post with comments
@@ -302,8 +421,16 @@ def get_reddit_data(subreddit_name=None, num_posts=None, sort_by=None, verbose=N
         print(f"Found {len(posts)} posts after filtering")
         for i, post_data in enumerate(posts, 1):
             title = post_data['title']
-            print(f"Post {i}: {title[:60]}..." if len(title) > 60 else f"Post {i}: {title}")
-            print(f"  Score: {post_data['score']}, Comments: {post_data['num_comments']}, Interaction: {post_data['interaction_score']}")
+            try:
+                if len(title) > 60:
+                    print(f"Post {i}: {title[:60]}...")
+                else:
+                    print(f"Post {i}: {title}")
+                print(f"  Score: {post_data['score']}, Comments: {post_data['num_comments']}, Interaction: {post_data['interaction_score']}")
+            except UnicodeEncodeError:
+                # Fallback for encoding errors in Windows console
+                print(f"Post {i}: [post with unicode characters]")
+                print(f"  Score: {post_data['score']}, Comments: {post_data['num_comments']}, Interaction: {post_data['interaction_score']}")
     
     return posts
 
@@ -386,7 +513,10 @@ def save_posts_to_file(posts, filename=None, format_type=None):
     print(f"Saved {len(posts)} posts to {filepath}")
     return filepath
 
-def save_network_data(network_data, base_filename="reddit_network"):
+def save_network_data(network_data, base_filename="reddit_network", 
+                     save_pickle=True, save_reply_edges=True, 
+                     save_coparticipation=True, save_stats=True,
+                     save_graphml=True):
     """
     Save interaction network data in multiple formats for analysis.
     
@@ -401,29 +531,33 @@ def save_network_data(network_data, base_filename="reddit_network"):
     saved_files = {}
     
     # 1. Save NetworkX graph as GraphML (can be opened in Gephi, Cytoscape, etc.)
-    # GraphML doesn't support list attributes, so we need to create a clean copy
-    graph_file = f"{base_filename}_graph_{timestamp}.graphml"
-    G_clean = network_data['graph'].copy()
-    
-    # Remove 'interactions' attribute from edges (it's a list, not supported by GraphML)
-    for u, v, data in G_clean.edges(data=True):
-        if 'interactions' in data:
-            del data['interactions']
-    
-    nx.write_graphml(G_clean, graph_file)
-    saved_files['graph'] = graph_file
-    print(f"Saved NetworkX graph to {graph_file}")
+    if save_graphml:
+        # GraphML doesn't support list attributes, so we need to create a clean copy
+        graph_file = f"{base_filename}_graph_{timestamp}.graphml"
+        G_clean = network_data['graph'].copy()
+        
+        # Remove attributes not supported by GraphML (lists, dicts, etc.)
+        for u, v, data in G_clean.edges(data=True):
+            if 'interactions' in data:
+                del data['interactions']
+            if 'strength_components' in data:
+                del data['strength_components']
+        
+        nx.write_graphml(G_clean, graph_file)
+        saved_files['graph'] = graph_file
+        print(f"Saved NetworkX graph to {graph_file}")
     
     # 2. Save NetworkX graph as pickle (for Python analysis)
-    pickle_file = f"{base_filename}_graph_{timestamp}.gpickle"
-    with open(pickle_file, 'wb') as f:
-        pickle.dump(network_data['graph'], f)
-    saved_files['pickle'] = pickle_file
-    print(f"Saved graph pickle to {pickle_file}")
+    if save_pickle:
+        pickle_file = f"{base_filename}_graph_{timestamp}.gpickle"
+        with open(pickle_file, 'wb') as f:
+            pickle.dump(network_data['graph'], f)
+        saved_files['pickle'] = pickle_file
+        print(f"Saved graph pickle to {pickle_file}")
     
     # 3. Save reply edges as CSV
-    reply_edges_file = f"{base_filename}_reply_edges_{timestamp}.csv"
-    if network_data['reply_edges']:
+    if save_reply_edges and network_data['reply_edges']:
+        reply_edges_file = f"{base_filename}_reply_edges_{timestamp}.csv"
         with open(reply_edges_file, 'w', newline='', encoding='utf-8') as f:
             fieldnames = ['from', 'to', 'type', 'post_id', 'comment_id', 'score', 'timestamp']
             writer = csv.DictWriter(f, fieldnames=fieldnames)
@@ -433,8 +567,8 @@ def save_network_data(network_data, base_filename="reddit_network"):
         print(f"Saved {len(network_data['reply_edges'])} reply edges to {reply_edges_file}")
     
     # 4. Save co-participation edges as CSV
-    copart_edges_file = f"{base_filename}_coparticipation_edges_{timestamp}.csv"
-    if network_data['co_participation_edges']:
+    if save_coparticipation and network_data['co_participation_edges']:
+        copart_edges_file = f"{base_filename}_coparticipation_edges_{timestamp}.csv"
         with open(copart_edges_file, 'w', newline='', encoding='utf-8') as f:
             fieldnames = ['from', 'to', 'type', 'post_id']
             writer = csv.DictWriter(f, fieldnames=fieldnames)
@@ -444,24 +578,25 @@ def save_network_data(network_data, base_filename="reddit_network"):
         print(f"Saved {len(network_data['co_participation_edges'])} co-participation edges to {copart_edges_file}")
     
     # 5. Save network statistics as JSON
-    stats_file = f"{base_filename}_stats_{timestamp}.json"
-    stats = {
-        **network_data['stats'],
-        'graph_metrics': {
-            'density': nx.density(network_data['graph']),
-            'num_weakly_connected_components': nx.number_weakly_connected_components(network_data['graph']),
-            'num_strongly_connected_components': nx.number_strongly_connected_components(network_data['graph']),
-        },
-        'top_users_by_degree': _get_top_nodes_by_degree(network_data['graph'], top_n=20),
-        'timestamp': timestamp
-    }
+    if save_stats:
+        stats_file = f"{base_filename}_stats_{timestamp}.json"
+        stats = {
+            **network_data['stats'],
+            'graph_metrics': {
+                'density': nx.density(network_data['graph']),
+                'num_weakly_connected_components': nx.number_weakly_connected_components(network_data['graph']),
+                'num_strongly_connected_components': nx.number_strongly_connected_components(network_data['graph']),
+            },
+            'top_users_by_degree': _get_top_nodes_by_degree(network_data['graph'], top_n=20),
+            'timestamp': timestamp
+        }
+        
+        with open(stats_file, 'w', encoding='utf-8') as f:
+            json.dump(stats, f, indent=2)
+        saved_files['stats'] = stats_file
+        print(f"Saved network statistics to {stats_file}")
     
-    with open(stats_file, 'w', encoding='utf-8') as f:
-        json.dump(stats, f, indent=2)
-    saved_files['stats'] = stats_file
-    print(f"Saved network statistics to {stats_file}")
-    
-    # 6. Save user participation summary
+    # 6. Save user participation summary (Note: not controlled by config flags)
     user_summary_file = f"{base_filename}_user_summary_{timestamp}.csv"
     user_summary = []
     for user, posts in network_data['user_posts'].items():
