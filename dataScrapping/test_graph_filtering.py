@@ -24,8 +24,13 @@ except ImportError as e:
     print(f"Reddit scraper not available ({e}). Will use synthetic test data.")
     REDDIT_AVAILABLE = False
 
-# Set up results directory
-RESULTS_DIR = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'results')
+# Import graph metrics analyzer
+from graph_metrics_analyzer import GraphMetricsAnalyzer
+
+# Set up results directory with timestamp
+TIMESTAMP = datetime.now().strftime("%Y%m%d_%H%M%S")
+BASE_RESULTS_DIR = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'results')
+RESULTS_DIR = os.path.join(BASE_RESULTS_DIR, TIMESTAMP)
 os.makedirs(RESULTS_DIR, exist_ok=True)
 
 
@@ -282,18 +287,18 @@ def compare_graphs_table(all_stats):
     # Find best method for strong connectivity
     best_strong = max(all_stats[1:], key=lambda x: x['largest_strong_component_pct'])  # Skip original
     print(f"  Best for Strong Connectivity: {best_strong['name']}")
-    print(f"    → {best_strong['largest_strong_component_size']} nodes in largest strongly connected component "
+    print(f"    -> {best_strong['largest_strong_component_size']} nodes in largest strongly connected component "
           f"({best_strong['largest_strong_component_pct']:.1f}%)")
     
     # Find best method for preserving size
     best_size = max(all_stats[1:], key=lambda x: x['nodes'])
     print(f"\n  Best for Preserving Graph Size: {best_size['name']}")
-    print(f"    → Retains {best_size['nodes']} nodes ({(best_size['nodes']/all_stats[0]['nodes'])*100:.1f}% of original)")
+    print(f"    -> Retains {best_size['nodes']} nodes ({(best_size['nodes']/all_stats[0]['nodes'])*100:.1f}% of original)")
     
     # Find best density
     best_density = max(all_stats[1:], key=lambda x: x['density'])
     print(f"\n  Best for Graph Density: {best_density['name']}")
-    print(f"    → Density: {best_density['density']:.4f}")
+    print(f"    -> Density: {best_density['density']:.4f}")
     
     print("="*100 + "\n")
 
@@ -338,8 +343,7 @@ def visualize_degree_distributions(graphs_dict):
         axes[idx].axis('off')
     
     plt.tight_layout()
-    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-    filename = os.path.join(RESULTS_DIR, f"graph_filtering_degree_distributions_{timestamp}.png")
+    filename = os.path.join(RESULTS_DIR, f"graph_filtering_degree_distributions.png")
     plt.savefig(filename, dpi=150, bbox_inches='tight')
     print(f"\nSaved degree distribution plot: {filename}")
     plt.close()
@@ -397,8 +401,7 @@ def visualize_network_comparison(graphs_dict, max_graphs=4):
         ax.axis('off')
     
     plt.tight_layout()
-    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-    filename = os.path.join(RESULTS_DIR, f"graph_filtering_network_viz_{timestamp}.png")
+    filename = os.path.join(RESULTS_DIR, f"graph_filtering_network_viz.png")
     plt.savefig(filename, dpi=150, bbox_inches='tight')
     print(f"Saved network visualization: {filename}")
     plt.close()
@@ -499,7 +502,7 @@ def test_all_filtering_methods():
     print("-" * 60)
     try:
         G_degree = filter_by_degree(G_original, min_in_degree=1, min_out_degree=1, min_total_degree=3)
-        graph_name = "Degree Filter (total≥3)"
+        graph_name = "Degree Filter (total>=3)"
         graphs[graph_name] = G_degree
         stats = analyze_graph_connectivity(G_degree, graph_name)
         print_graph_stats(stats)
@@ -527,7 +530,7 @@ def test_all_filtering_methods():
     for min_strength in [1.5, 2.0]:
         try:
             G_strength = filter_by_edge_strength(G_original, min_strength=min_strength)
-            graph_name = f"Edge Strength ≥{min_strength}"
+            graph_name = f"Edge Strength >={min_strength}"
             graphs[graph_name] = G_strength
             stats = analyze_graph_connectivity(G_strength, graph_name)
             print_graph_stats(stats)
@@ -540,6 +543,39 @@ def test_all_filtering_methods():
     print("STEP 4: Comparison & Analysis")
     print("="*60)
     compare_graphs_table(all_stats)
+    
+    # Step 4b: Detailed metrics analysis for selected graphs
+    print("\n" + "="*60)
+    print("STEP 4b: Detailed Metrics Analysis")
+    print("="*60)
+    
+    # Analyze original and best filtered graphs
+    graphs_to_analyze = {
+        'Original': G_original,
+    }
+    
+    # Add the most strongly connected filtered graph
+    if len(all_stats) > 1:
+        best_filtered = max(all_stats[1:], key=lambda x: x.get('largest_strong_component_pct', 0))
+        best_filtered_name = best_filtered['name']
+        if best_filtered_name in graphs:
+            graphs_to_analyze[best_filtered_name] = graphs[best_filtered_name]
+    
+    for graph_name, graph in graphs_to_analyze.items():
+        if graph.number_of_nodes() > 0:
+            print(f"\n--- Analyzing: {graph_name} ---")
+            analyzer = GraphMetricsAnalyzer(graph, graph_name)
+            is_large = graph.number_of_nodes() > 500
+            metrics = analyzer.analyze_all(
+                include_centrality=not is_large,
+                include_communities=not is_large
+            )
+            
+            # Save detailed metrics
+            metrics_file = os.path.join(RESULTS_DIR, f"{graph_name.replace(' ', '_')}_detailed_metrics.json")
+            analyzer.save_to_json(metrics_file)
+            metrics_txt_file = os.path.join(RESULTS_DIR, f"{graph_name.replace(' ', '_')}_detailed_metrics.txt")
+            analyzer.save_to_txt(metrics_txt_file)
     
     # Step 5: Visualizations
     print("\n" + "="*60)
@@ -558,8 +594,7 @@ def test_all_filtering_methods():
     print("STEP 6: Saving results...")
     print("="*60)
     
-    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-    results_file = os.path.join(RESULTS_DIR, f"graph_filtering_results_{timestamp}.json")
+    results_file = os.path.join(RESULTS_DIR, f"graph_filtering_results.json")
     
     with open(results_file, 'w', encoding='utf-8') as f:
         json.dump(all_stats, f, indent=2)
@@ -569,10 +604,12 @@ def test_all_filtering_methods():
     print("\n" + "="*60)
     print("TEST COMPLETE!")
     print("="*60)
-    print("\nFiles generated in results folder:")
-    print(f"  - {os.path.basename(results_file)}")
-    print(f"  - graph_filtering_degree_distributions_*.png")
-    print(f"  - graph_filtering_network_viz_*.png")
+    print("\nFiles generated in timestamped results folder:")
+    print(f"  - graph_filtering_results.json")
+    print(f"  - graph_filtering_degree_distributions.png")
+    print(f"  - graph_filtering_network_viz.png")
+    print(f"  - *_detailed_metrics.json (comprehensive metrics)")
+    print(f"  - *_detailed_metrics.txt (human-readable metrics)")
     print(f"\nResults directory: {RESULTS_DIR}")
     print("\n" + "="*60 + "\n")
     
@@ -623,8 +660,8 @@ def create_synthetic_test_graph():
 if __name__ == "__main__":
     try:
         graphs, stats = test_all_filtering_methods()
-        print("\n✅ All tests completed successfully!\n")
+        print("\n[OK] All tests completed successfully!\n")
     except Exception as e:
-        print(f"\n❌ Error during testing: {e}")
+        print(f"\n[ERROR] Error during testing: {e}")
         import traceback
         traceback.print_exc()

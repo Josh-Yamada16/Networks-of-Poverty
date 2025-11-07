@@ -14,6 +14,7 @@ import csv
 import json
 from collections import defaultdict
 import pickle
+from graph_metrics_analyzer import GraphMetricsAnalyzer
 
 def prepare_for_gephi(network_data, output_prefix, save_graphml=True, save_node_attrs=True, 
                       save_edge_attrs=True, save_community=True):
@@ -241,6 +242,26 @@ def prepare_for_gephi(network_data, output_prefix, save_graphml=True, save_node_
     
     print(f"\nCommunities: {len(communities)}")
     
+    # Step 10: Comprehensive metrics analysis
+    print("\n" + "="*60)
+    print("STEP 10: Comprehensive Metrics Analysis")
+    print("="*60)
+    
+    if G.number_of_nodes() > 0:
+        analyzer = GraphMetricsAnalyzer(G, "Gephi_Prepared_Network")
+        is_large = G.number_of_nodes() > 500
+        
+        metrics = analyzer.analyze_all(
+            include_centrality=not is_large,
+            include_communities=not is_large
+        )
+        
+        # Save comprehensive metrics
+        metrics_json = f"{output_prefix}_comprehensive_metrics.json"
+        metrics_txt = f"{output_prefix}_comprehensive_metrics.txt"
+        analyzer.save_to_json(metrics_json)
+        analyzer.save_to_txt(metrics_txt)
+    
     print("\n" + "="*60)
     print("FILES TO IMPORT IN GEPHI:")
     print("="*60)
@@ -257,6 +278,8 @@ def prepare_for_gephi(network_data, output_prefix, save_graphml=True, save_node_
         print(f"   - Edge attributes: {edge_attrs_file}")
     if community_summary_file:
         print(f"   - Community info: {community_summary_file}")
+    print(f"   - Comprehensive metrics (JSON): {metrics_json}")
+    print(f"   - Comprehensive metrics (TXT): {metrics_txt}")
     
     if graphml_file:
         print("\nGephi Steps:")
@@ -270,11 +293,14 @@ def prepare_for_gephi(network_data, output_prefix, save_graphml=True, save_node_
         'graph': G,
         'communities': communities,
         'community_map': community_map,
+        'metrics': metrics if G.number_of_nodes() > 0 else None,
         'files': {
             'graphml': graphml_file,
             'node_attributes': node_attrs_file,
             'edge_attributes': edge_attrs_file,
-            'community_summary': community_summary_file
+            'community_summary': community_summary_file,
+            'comprehensive_metrics_json': metrics_json if G.number_of_nodes() > 0 else None,
+            'comprehensive_metrics_txt': metrics_txt if G.number_of_nodes() > 0 else None
         }
     }
 

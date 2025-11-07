@@ -12,6 +12,7 @@ This script shows how to:
 import reddit_scraper as rs
 import networkx as nx
 import matplotlib.pyplot as plt
+from graph_metrics_analyzer import GraphMetricsAnalyzer
 from config import (
     SAVE_PICKLE_GRAPH, SAVE_REPLY_EDGES_CSV, SAVE_COPARTICIPATION_CSV,
     SAVE_NETWORK_STATS_JSON, SAVE_GEPHI_GRAPHML
@@ -117,6 +118,26 @@ def main():
     with open(f"{output_folder}/analysis_metadata.json", 'w') as f:
         json.dump(metadata, f, indent=2)
     print(f"Saved analysis metadata to {output_folder}/analysis_metadata.json")
+    
+    # Step 4b: Comprehensive metrics analysis
+    print("\n=== Running Comprehensive Metrics Analysis ===")
+    if G.number_of_nodes() > 0:
+        analyzer = GraphMetricsAnalyzer(G, f"{subreddit_name}_network")
+        is_large = G.number_of_nodes() > 500
+        
+        metrics = analyzer.analyze_all(
+            include_centrality=not is_large,
+            include_communities=not is_large
+        )
+        
+        # Save detailed metrics
+        metrics_json = f"{output_folder}/comprehensive_metrics.json"
+        metrics_txt = f"{output_folder}/comprehensive_metrics.txt"
+        analyzer.save_to_json(metrics_json)
+        analyzer.save_to_txt(metrics_txt)
+        
+        saved_files['comprehensive_metrics_json'] = metrics_json
+        saved_files['comprehensive_metrics_txt'] = metrics_txt
     
     print("\n=== Files Created ===")
     for file_type, filepath in saved_files.items():
