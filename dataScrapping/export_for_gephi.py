@@ -1,5 +1,5 @@
 """
-Gephi Visualization Preparation Script
+Gephi Export Module
 
 Prepares network data for visualization in Gephi with:
 - Nodes sized by helping activity (larger = more help given)

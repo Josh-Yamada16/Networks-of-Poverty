@@ -23,7 +23,7 @@ def main():
     
     # Configuration
     subreddit_name = 'poverty'
-    num_posts = 100
+    num_posts = 300
     sort_by = 'comments'
     time_filter = 'all'
     max_comment_depth = 100  # How deep to traverse comment trees
@@ -196,61 +196,5 @@ def main():
     print("2. Use the edge CSV files for custom analysis")
     print("3. Load the .gpickle file in Python with nx.read_gpickle() for further analysis")
 
-def analyze_interaction_types():
-    """
-    Example showing how to analyze different types of interactions
-    """
-    print("\n=== Analyzing Interaction Types ===\n")
-    
-    # Scrape data
-    posts = rs.get_reddit_data(
-        subreddit_name='assistance',
-        num_posts=3,
-        include_comments=True,
-        verbose=False
-    )
-    
-    # Build network
-    network_data = rs.build_interaction_network(posts)
-    
-    # Analyze reply patterns
-    print("Reply Network Analysis:")
-    reply_edges = network_data['reply_edges']
-    
-    if reply_edges:
-        # Count replies per user
-        replies_sent = {}
-        replies_received = {}
-        
-        for edge in reply_edges:
-            from_user = edge['from']
-            to_user = edge['to']
-            
-            replies_sent[from_user] = replies_sent.get(from_user, 0) + 1
-            replies_received[to_user] = replies_received.get(to_user, 0) + 1
-        
-        print(f"  Total reply interactions: {len(reply_edges)}")
-        print(f"  Unique users sending replies: {len(replies_sent)}")
-        print(f"  Unique users receiving replies: {len(replies_received)}")
-    
-    # Analyze co-participation
-    print("\nCo-Participation Network Analysis:")
-    copart_edges = network_data['co_participation_edges']
-    
-    if copart_edges:
-        print(f"  Total co-participation edges: {len(copart_edges)}")
-        
-        # Find posts with most co-participation
-        posts_copart = {}
-        for edge in copart_edges:
-            post_id = edge['post_id']
-            posts_copart[post_id] = posts_copart.get(post_id, 0) + 1
-        
-        print(f"  Posts generating co-participation: {len(posts_copart)}")
-
 if __name__ == "__main__":
-    # Run main example
     main()
-    
-    # Uncomment to run interaction type analysis
-    # analyze_interaction_types()

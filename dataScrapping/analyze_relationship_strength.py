@@ -6,7 +6,7 @@ to analyze social connections in Reddit communities.
 """
 
 import reddit_scraper as rs
-import gephi_visualization_prep as gvp
+import export_for_gephi as gvp
 import networkx as nx
 import os
 from datetime import datetime
