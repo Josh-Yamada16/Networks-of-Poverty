@@ -12,6 +12,7 @@ This script shows how to:
 import reddit_scraper as rs
 import networkx as nx
 import matplotlib.pyplot as plt
+import os
 from graph_metrics_analyzer import GraphMetricsAnalyzer
 from config import (
     SAVE_PICKLE_GRAPH, SAVE_REPLY_EDGES_CSV, SAVE_COPARTICIPATION_CSV,
@@ -21,12 +22,14 @@ from config import (
 def main():
     print("=== Reddit Social Network Analysis Example ===\n")
     
-    # Configuration
-    subreddit_name = 'poverty'
+    # Configuration - allow override from environment variable for batch processing
+    subreddit_name = os.environ.get('ANALYSIS_SUBREDDIT', 'poverty')
     num_posts = 300
     sort_by = 'comments'
     time_filter = 'all'
     max_comment_depth = 100  # How deep to traverse comment trees
+    
+    print(f"Analyzing subreddit: r/{subreddit_name}\n")
     
     # Step 1: Scrape posts with comments
     print("Step 1: Scraping posts with full comment trees...")
@@ -37,7 +40,10 @@ def main():
         time_filter=time_filter,  # From 'hour', 'day', 'week', 'month', 'year', 'all'
         include_comments=True,  # IMPORTANT: Fetch full comment trees
         max_comment_depth=max_comment_depth,  # How deep to traverse replies
-        verbose=True  # Show progress
+        verbose=True,  # Show progress
+        use_cache=True,  # Use cached data if available (set to False to force refresh)
+        max_cache_age_days=None,  # Cache never expires (set to e.g., 7 for weekly refresh)
+        force_refresh=False  # Set to True to force re-scraping even if cache exists
     )
     
     print(f"\nCollected {len(posts)} posts with comments")
@@ -82,12 +88,11 @@ def main():
     # Step 4: Save network data
     print("\n=== Saving Network Data ===")
     # Create organized output folder structure
-    import os
     from datetime import datetime
     
     # Option: Organize by subreddit and timestamp
     timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
-    output_folder = f"results/{subreddit_name}/{timestamp}"
+    output_folder = f"results/{subreddit_name}/full_analysis_{timestamp}"
     os.makedirs(output_folder, exist_ok=True)  # Create folder if it doesn't exist
     
     # Create a descriptive filename

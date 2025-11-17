@@ -55,6 +55,9 @@ results/
 *.gpickle
 *.graphml
 
+# Cached Reddit data (can be large - 30-200 MB per file)
+dataScrapping/cached_data/
+
 # But keep small metadata files
 !*_metadata.json
 !*_stats.json

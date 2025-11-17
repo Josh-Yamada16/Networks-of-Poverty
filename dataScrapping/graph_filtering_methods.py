@@ -28,10 +28,10 @@ except ImportError as e:
 from graph_metrics_analyzer import GraphMetricsAnalyzer
 
 # Set up results directory with timestamp
+# NOTE: RESULTS_DIR will be set in the main function after subreddit is determined
 TIMESTAMP = datetime.now().strftime("%Y%m%d_%H%M%S")
 BASE_RESULTS_DIR = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'results')
-RESULTS_DIR = os.path.join(BASE_RESULTS_DIR, TIMESTAMP)
-os.makedirs(RESULTS_DIR, exist_ok=True)
+RESULTS_DIR = None  # Will be set in test_all_filtering_methods()
 
 
 # ===========================
@@ -429,10 +429,17 @@ def test_all_filtering_methods():
     print("STEP 1: Fetching Reddit data...")
     print("-" * 60)
     
-    # You can customize these parameters
-    subreddit = "poverty"  # Change to your target subreddit
+    # You can customize these parameters - allow override from environment variable
+    subreddit = os.environ.get('ANALYSIS_SUBREDDIT', 'assistance')  # Change to your target subreddit
     num_posts = 300         # Number of posts to fetch
     
+    # Set up results directory with subreddit name
+    global RESULTS_DIR
+    RESULTS_DIR = os.path.join(BASE_RESULTS_DIR, f"graph_filtering_{subreddit}_{TIMESTAMP}")
+    os.makedirs(RESULTS_DIR, exist_ok=True)
+    
+    print(f"Analyzing subreddit: r/{subreddit}")
+    print(f"Results will be saved to: {RESULTS_DIR}\n")
     if REDDIT_AVAILABLE:
         try:
             posts = get_reddit_data(
@@ -442,7 +449,9 @@ def test_all_filtering_methods():
                 time_filter='all',
                 verbose=True,
                 include_comments=True,
-                max_comment_depth=50
+                max_comment_depth=10,
+                use_cache=True,  # Use cached data if available
+                force_refresh=False  # Set to True to force re-scraping
             )
             print(f"\nSuccessfully fetched {len(posts)} posts")
         except Exception as e:
@@ -594,21 +603,39 @@ def test_all_filtering_methods():
     print("STEP 6: Saving results...")
     print("="*60)
     
+    # Save metadata
+    metadata = {
+        'timestamp': TIMESTAMP,
+        'subreddit': subreddit,
+        'num_posts': num_posts,
+        'original_nodes': G_original.number_of_nodes(),
+        'original_edges': G_original.number_of_edges(),
+        'generated_at': datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+    }
+    metadata_file = os.path.join(RESULTS_DIR, 'analysis_metadata.json')
+    with open(metadata_file, 'w', encoding='utf-8') as f:
+        json.dump(metadata, f, indent=2)
+    print(f"Saved metadata to: {metadata_file}")
+    
+    # Save results
     results_file = os.path.join(RESULTS_DIR, f"graph_filtering_results.json")
     
     with open(results_file, 'w', encoding='utf-8') as f:
         json.dump(all_stats, f, indent=2)
     
-    print(f"\nSaved detailed results to: {results_file}")
+    print(f"Saved detailed results to: {results_file}")
     
     print("\n" + "="*60)
     print("TEST COMPLETE!")
     print("="*60)
     print("\nFiles generated in timestamped results folder:")
+    print(f"  - analysis_metadata.json (subreddit: {subreddit})")
     print(f"  - graph_filtering_results.json")
     print(f"  - graph_filtering_degree_distributions.png")
     print(f"  - graph_filtering_network_viz.png")
     print(f"  - *_detailed_metrics.json (comprehensive metrics)")
+    print(f"\nResults directory: {RESULTS_DIR}")
+    print("="*60 + "\n")
     print(f"  - *_detailed_metrics.txt (human-readable metrics)")
     print(f"\nResults directory: {RESULTS_DIR}")
     print("\n" + "="*60 + "\n")

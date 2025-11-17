@@ -5,6 +5,7 @@ import json
 import csv
 import pickle
 import time
+import os
 from datetime import datetime
 from collections import defaultdict
 from config import *  # Import all configuration settings
@@ -287,7 +288,114 @@ def _get_post_participants(user_posts):
             post_participants[post_id].add(user)
     return post_participants
 
-def get_reddit_data(subreddit_name=None, num_posts=None, sort_by=None, verbose=None, time_filter=None, include_comments=True, max_comment_depth=10):
+def get_cache_filepath(subreddit_name, num_posts, sort_by, time_filter, include_comments):
+    """
+    Generate a consistent cache filename based on scraping parameters.
+    
+    Args:
+        subreddit_name: Name of subreddit
+        num_posts: Number of posts
+        sort_by: Sorting method
+        time_filter: Time filter
+        include_comments: Whether comments are included
+    
+    Returns:
+        Path to cache file
+    """
+    cache_dir = os.path.join(os.path.dirname(__file__), 'cached_data')
+    os.makedirs(cache_dir, exist_ok=True)
+    
+    comments_suffix = "_with_comments" if include_comments else "_no_comments"
+    filename = f"{subreddit_name}_{sort_by}_{time_filter}_{num_posts}posts{comments_suffix}.json"
+    
+    return os.path.join(cache_dir, filename)
+
+def save_posts_cache(posts, subreddit_name, num_posts, sort_by, time_filter, include_comments):
+    """
+    Save scraped posts to cache file.
+    
+    Args:
+        posts: List of post dictionaries
+        subreddit_name: Name of subreddit
+        num_posts: Number of posts
+        sort_by: Sorting method
+        time_filter: Time filter
+        include_comments: Whether comments are included
+    
+    Returns:
+        Path to saved cache file
+    """
+    cache_file = get_cache_filepath(subreddit_name, num_posts, sort_by, time_filter, include_comments)
+    
+    cache_data = {
+        'metadata': {
+            'subreddit': subreddit_name,
+            'num_posts': num_posts,
+            'sort_by': sort_by,
+            'time_filter': time_filter,
+            'include_comments': include_comments,
+            'cached_at': datetime.now().isoformat(),
+            'total_posts': len(posts)
+        },
+        'posts': posts
+    }
+    
+    with open(cache_file, 'w', encoding='utf-8') as f:
+        json.dump(cache_data, f, indent=2, ensure_ascii=False)
+    
+    # Calculate file size
+    file_size = os.path.getsize(cache_file) / (1024 * 1024)  # MB
+    print(f"Cached {len(posts)} posts to: {cache_file}")
+    print(f"Cache file size: {file_size:.2f} MB")
+    
+    return cache_file
+
+def load_posts_cache(subreddit_name, num_posts, sort_by, time_filter, include_comments, max_age_days=None):
+    """
+    Load posts from cache if available and not too old.
+    
+    Args:
+        subreddit_name: Name of subreddit
+        num_posts: Number of posts
+        sort_by: Sorting method
+        time_filter: Time filter
+        include_comments: Whether comments are included
+        max_age_days: Maximum age of cache in days (None = no limit)
+    
+    Returns:
+        List of posts if cache exists and is valid, None otherwise
+    """
+    cache_file = get_cache_filepath(subreddit_name, num_posts, sort_by, time_filter, include_comments)
+    
+    if not os.path.exists(cache_file):
+        return None
+    
+    # Check cache age if max_age_days specified
+    if max_age_days is not None:
+        file_mod_time = datetime.fromtimestamp(os.path.getmtime(cache_file))
+        age_days = (datetime.now() - file_mod_time).days
+        if age_days > max_age_days:
+            print(f"Cache file is {age_days} days old (max: {max_age_days}). Re-scraping...")
+            return None
+    
+    try:
+        with open(cache_file, 'r', encoding='utf-8') as f:
+            cache_data = json.load(f)
+        
+        metadata = cache_data.get('metadata', {})
+        posts = cache_data.get('posts', [])
+        
+        file_size = os.path.getsize(cache_file) / (1024 * 1024)  # MB
+        print(f"Loaded {len(posts)} posts from cache: {cache_file}")
+        print(f"Cache created: {metadata.get('cached_at', 'unknown')}")
+        print(f"Cache file size: {file_size:.2f} MB")
+        
+        return posts
+    except Exception as e:
+        print(f"Error loading cache: {e}")
+        return None
+
+def get_reddit_data(subreddit_name=None, num_posts=None, sort_by=None, verbose=None, time_filter=None, include_comments=True, max_comment_depth=10, use_cache=True, max_cache_age_days=None, force_refresh=False):
     """
     Get Reddit posts with parameters from config file or overrides
     
@@ -299,6 +407,9 @@ def get_reddit_data(subreddit_name=None, num_posts=None, sort_by=None, verbose=N
         time_filter: Time filter for sorting ('hour', 'day', 'week', 'month', 'year', 'all')
         include_comments: Whether to fetch full comment trees (default: True)
         max_comment_depth: Maximum depth for comment tree traversal (default: 10)
+        use_cache: Whether to use cached data if available (default: True)
+        max_cache_age_days: Maximum age of cache in days (None = no limit)
+        force_refresh: Force re-scraping even if cache exists (default: False)
     
     Returns:
         List of posts with optional comment trees
@@ -309,6 +420,20 @@ def get_reddit_data(subreddit_name=None, num_posts=None, sort_by=None, verbose=N
     sort_by = sort_by or SORT_BY
     verbose = verbose if verbose is not None else VERBOSE
     time_filter = time_filter or TIME_FILTER
+    
+    # Try to load from cache first (unless force_refresh is True)
+    if use_cache and not force_refresh:
+        cached_posts = load_posts_cache(subreddit_name, num_posts, sort_by, time_filter, 
+                                       include_comments, max_cache_age_days)
+        if cached_posts is not None:
+            return cached_posts
+    
+    # If no cache or force_refresh, scrape from Reddit
+    if verbose:
+        if force_refresh:
+            print("Force refresh enabled - scraping fresh data from Reddit...")
+        else:
+            print("No valid cache found - scraping from Reddit...")
     
     subreddit = reddit.subreddit(subreddit_name)
     
@@ -415,6 +540,13 @@ def get_reddit_data(subreddit_name=None, num_posts=None, sort_by=None, verbose=N
         posts = all_posts[:num_posts]
     else:
         posts = all_posts[:num_posts]
+    
+    # Cache the scraped data if use_cache is True
+    if use_cache:
+        try:
+            save_posts_cache(posts, subreddit_name, num_posts, sort_by, time_filter, include_comments)
+        except Exception as e:
+            print(f"Warning: Could not save cache: {e}")
     
     # Print with verbose option
     if verbose:

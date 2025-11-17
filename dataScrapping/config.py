@@ -10,7 +10,7 @@ SUBREDDIT_NAME = "poverty"  # Change to any subreddit (without r/)
 # =============================================================================
 # POST COLLECTION SETTINGS
 # =============================================================================
-NUM_POSTS = 10  # Number of posts to scrape
+NUM_POSTS = 300  # Number of posts to scrape
 
 # Sorting method - choose one:
 # 'top'           - Highest scored posts (most upvotes)
@@ -55,7 +55,7 @@ INCLUDE_SELFTEXT = False  # Include post body text (can be very long)
 # =============================================================================
 # Comment collection settings
 INCLUDE_COMMENTS = True  # Set to True to fetch full comment trees (required for network analysis)
-MAX_COMMENT_DEPTH = 10  # Maximum depth to traverse in comment tree (prevents infinite recursion)
+MAX_COMMENT_DEPTH = 100  # Maximum depth to traverse in comment tree (prevents infinite recursion)
 
 # Network building settings
 BUILD_NETWORK = True  # Set to True to build interaction networks from comments
@@ -96,7 +96,7 @@ SAVE_ANALYSIS_RESULTS = False  # Save analysis results to separate file
 # MULTIPLE SUBREDDIT SETTINGS
 # =============================================================================
 # Set to True to scrape from multiple subreddits
-MULTI_SUBREDDIT = False
+MULTI_SUBREDDIT = True
 SUBREDDIT_LIST = [
     "poverty",
     "povertyfinance", 

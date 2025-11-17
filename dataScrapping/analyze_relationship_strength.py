@@ -26,9 +26,11 @@ from config import (
 def main():
     print("=== Quick Start: Relationship Strength Analysis ===\n")
     
-    # Configuration
-    subreddit_name = 'poverty'  # Community-focused subreddit
-    num_posts = 200
+    # Configuration - allow override from environment variable for batch processing
+    subreddit_name = os.environ.get('ANALYSIS_SUBREDDIT', 'poverty')  # Community-focused subreddit
+    num_posts = 300
+    
+    print(f"Analyzing subreddit: r/{subreddit_name}\n")
 
     # Step 1: Scrape Reddit data with comments
     print("Step 1: Scraping Reddit data...")
@@ -36,8 +38,12 @@ def main():
         subreddit_name=subreddit_name,
         num_posts=num_posts,
         sort_by='comments',
+        time_filter='all',
         include_comments=True,
-        verbose=True
+        verbose=True,
+        max_comment_depth=100,
+        use_cache=True,  # Use cached data if available
+        force_refresh=False  # Set to True to force re-scraping
     )
     
     # Step 2: Build network with relationship strength calculations
@@ -184,7 +190,7 @@ def main():
         
         # Create organized output folder structure
         timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
-        output_folder = f"results/{subreddit_name}/{timestamp}"
+        output_folder = f"results/{subreddit_name}/relationship_strength_{timestamp}"
         os.makedirs(output_folder, exist_ok=True)
         
         base_filename = f"{output_folder}/network_{subreddit_name}_{timestamp}"
