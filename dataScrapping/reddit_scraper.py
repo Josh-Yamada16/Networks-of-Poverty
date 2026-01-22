@@ -1,3 +1,11 @@
+"""
+Reddit Network Scraper
+
+Scrapes Reddit posts and comments from specified subreddits to build social networks.
+Constructs interaction graphs where nodes represent users and edges represent reply relationships,
+with weights and metadata tracking the depth and frequency of interactions.
+"""
+
 import praw
 import requests
 import networkx as nx
