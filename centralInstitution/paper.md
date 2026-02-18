@@ -25,3 +25,6 @@
 - Behavior B
 - Edge budget
 - Thresholds
+
+## How Behavior Spreads - Damon Centola
+- contagions should be able to spread through weak ties like how viruses spread through the vulnerable population
