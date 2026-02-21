@@ -2,24 +2,12 @@ import networkx as nx
 import random
 import numpy as np
 import parameters as P
-import string
 from collections import defaultdict
 from typing import Tuple
 from centralInstitution.utils import Utils as utils
 from centralInstitution.visualizer import Visualization as viz
 
 class Setup:
-
-    @staticmethod
-    def generate_letter_codes(n):
-        letters = string.ascii_uppercase
-        codes = []
-        for first in letters:
-            for second in letters:
-                codes.append(first + second)
-                if len(codes) == n:
-                    return codes
-        raise ValueError("Exceeded 26 × 26 = 676 possible two-letter codes")
 
     @staticmethod
     def rename_nodes_with_codes(G: nx.Graph):
@@ -214,7 +202,6 @@ class Setup:
                 if src != dst and not G.has_edge(src, dst):
                     G.add_edge(src, dst)
                     added_edges.append((src, dst))
-
 
         return G, added_edges
 

@@ -3,6 +3,8 @@ import numpy as np
 import networkx as nx
 import parameters as P
 import math
+import string
+
 
 class Utils:
     @staticmethod
@@ -128,3 +130,14 @@ class Utils:
                     mat[i][j] = val
                     mat[j][i] = val
         return mat
+    
+    @staticmethod
+    def generate_letter_codes(n):
+        letters = string.ascii_uppercase
+        codes = []
+        for first in letters:
+            for second in letters:
+                codes.append(first + second)
+                if len(codes) == n:
+                    return codes
+        raise ValueError("Exceeded 26 × 26 = 676 possible two-letter codes")

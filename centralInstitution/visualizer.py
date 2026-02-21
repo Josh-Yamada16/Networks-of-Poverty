@@ -9,6 +9,7 @@ class Visualization:
     def visualize_network(G, title="Network Visualization"):
         plt.figure(figsize=(12, 12))
         pos = nx.spring_layout(G)
+        # pos = nx.circular_layout(G)
         nx.draw(G, pos, with_labels=True, node_size=700, node_color='lightblue', font_size=10, font_color='black', edge_color='gray')
         plt.title(title)
         plt.show()
