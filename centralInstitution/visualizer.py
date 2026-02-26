@@ -1,3 +1,5 @@
+from platform import node
+
 import networkx as nx
 import matplotlib.pyplot as plt
 
@@ -10,7 +12,13 @@ class Visualization:
         plt.figure(figsize=(12, 12))
         pos = nx.spring_layout(G)
         # pos = nx.circular_layout(G)
-        nx.draw(G, pos, with_labels=True, node_size=700, node_color='lightblue', font_size=10, font_color='black', edge_color='gray')
+        node_colors = [
+            "lightgray" if G.nodes[node].get('is_central_institution', False)
+            else "red" if G.nodes[node].get('behavior_b', False)
+            else "lightblue"
+            for node in G.nodes()
+        ]
+        nx.draw(G, pos, with_labels=True, node_size=700, node_color=node_colors, font_size=10, font_color='black', edge_color='gray')
         plt.title(title)
         plt.show()
     

@@ -16,4 +16,4 @@ class CentralInstitution:
         # spread the behavior_b to all nodes neighboring the central institution
         for node in G.nodes:
             if any(node in G.neighbors(central_node) for central_node in central_inst):
-                G.nodes[node]['behavior_b'] = behavior_b_dictionary[behavior_b]
+                G.nodes[node]['behavior_b'] = True
