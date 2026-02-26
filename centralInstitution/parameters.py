@@ -1,8 +1,3 @@
-# Stingy Parameters
-STINGY_MAX_BEHAVIORS = 3
-STINGY_AVG_LOSS_PCT = 0.1
-STINGY_WINDOW = 4
-
 # Parameters for Main
 SHOW_PLOT = True  # Whether to show the plot at the end of the simulation
 CONTROL_RANDOM_SEED = False  # Whether to control random seed for reproducibility

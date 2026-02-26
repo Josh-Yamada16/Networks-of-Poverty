@@ -2,7 +2,7 @@ import networkx as nx
 import utils as U
 import random
 
-class BasicSimulation:
+class BasicSetup:
     def __init__(self):
         self.G = nx.Graph()
 

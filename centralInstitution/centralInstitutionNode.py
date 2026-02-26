@@ -6,7 +6,7 @@ behavior_b_dictionary = {
     3: "Stingy if lost money in any previous cycle"
 }
 
-class CentralInstitution:
+class CentralInstitutionNode:
     
     @staticmethod
     def spread_behavior_b(G: nx.Graph, behavior_b: int):
