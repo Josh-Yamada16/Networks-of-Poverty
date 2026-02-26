@@ -37,19 +37,19 @@ class InteractivePlot:
         self.ax.clear()
         g, node_colors = self.states[self.current_index]
         nx.draw(g, pos=self.layout, ax=self.ax, node_color=node_colors, with_labels=True,
-                edge_color='lightgray', width=3, node_size=1000, font_color='white', cmap='coolwarm')
-        viz.draw_node_labels(g, self.layout, self.ax)
+                edge_color='lightgray', width=3, node_size=1000, font_color='white')
+        # viz.draw_node_labels(g, self.layout, self.ax)
         self.ax.set_title(f"Iteration {self.current_index + 1}")
 
         # Manage colorbar
-        if self.cbar is not None:
-            self.cbar.remove()
-            self.cbar = None
-        sm = plt.cm.ScalarMappable(cmap='coolwarm', norm=plt.Normalize(vmin=min(node_colors), vmax=max(node_colors)))
-        sm.set_array([])
-        cax = self.fig.add_axes([0.91, 0.25, 0.02, 0.5])
-        self.cbar = self.fig.colorbar(sm, cax=cax)
-        self.cbar.set_label('Money')
+        # if self.cbar is not None:
+        #     self.cbar.remove()
+        #     self.cbar = None
+        # sm = plt.cm.ScalarMappable(cmap='coolwarm', norm=plt.Normalize(vmin=min(node_colors), vmax=max(node_colors)))
+        # sm.set_array([])
+        # cax = self.fig.add_axes([0.91, 0.25, 0.02, 0.5])
+        # self.cbar = self.fig.colorbar(sm, cax=cax)
+        # self.cbar.set_label('Money')
 
         self.fig.canvas.draw_idle()
 

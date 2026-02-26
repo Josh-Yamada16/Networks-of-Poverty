@@ -141,3 +141,8 @@ class Utils:
                 if len(codes) == n:
                     return codes
         raise ValueError("Exceeded 26 × 26 = 676 possible two-letter codes")
+    
+    @staticmethod
+    def average_degree(G: nx.Graph) -> float:
+        avg_degree = sum(dict(G.degree()).values()) / G.number_of_nodes()
+        return avg_degree

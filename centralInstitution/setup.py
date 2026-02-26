@@ -4,14 +4,14 @@ import numpy as np
 import parameters as P
 from collections import defaultdict
 from typing import Tuple
-from centralInstitution.utils import Utils as utils
-from centralInstitution.visualizer import Visualization as viz
+from utils import Utils as utils
+from visualizer import Visualization as viz
 
 class Setup:
 
     @staticmethod
     def rename_nodes_with_codes(G: nx.Graph):
-        codes = Setup.generate_letter_codes(len(G.nodes))
+        codes = utils.generate_letter_codes(len(G.nodes))
         mapping = dict(zip(G.nodes, codes))
         nx.relabel_nodes(G, mapping, copy=False)
 
@@ -74,7 +74,7 @@ class Setup:
         for node in node_list:
             G.nodes[node]['gains_losses'] = []
             G.nodes[node]['original_money'] = G.nodes[node]['money']
-        return (G, edge_mat, node_list)
+        return G, edge_mat, node_list
 
     @staticmethod
     def assign_money(G: nx.Graph):
