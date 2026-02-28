@@ -2,7 +2,7 @@ import matplotlib.pyplot as plt
 from matplotlib.widgets import Button
 from matplotlib.animation import FuncAnimation
 import networkx as nx
-from visualizer import Visualization as viz
+from .visualizer import Visualization as viz
 
 class InteractivePlot:
     def __init__(self, states, layout):
@@ -39,7 +39,10 @@ class InteractivePlot:
         nx.draw(g, pos=self.layout, ax=self.ax, node_color=node_colors, with_labels=True,
                 edge_color='lightgray', width=3, node_size=1000, font_color='white')
         # viz.draw_node_labels(g, self.layout, self.ax)
-        self.ax.set_title(f"Iteration {self.current_index + 1}")
+        if self.current_index == 0:
+            self.ax.set_title("Initial State")
+        else:
+            self.ax.set_title(f"Iteration {self.current_index}")
 
         # Manage colorbar
         # if self.cbar is not None:

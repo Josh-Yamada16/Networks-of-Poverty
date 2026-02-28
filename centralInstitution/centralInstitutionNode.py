@@ -20,13 +20,13 @@ class CentralInstitutionNode:
         # Remove old central institution
         G.remove_node(old_central)
         # Add new central institution
-        CentralInstitutionNode.add_central_institution(G, list(G.nodes()))
+        CentralInstitutionNode.add_central_institution(G, list(G.nodes()), P.CENTRAL_INSTITUTION_CONNECTION_PERCENTAGE)
     
     @staticmethod
-    def add_central_institution(G: nx.Graph, letter_codes: list[str]):
+    def add_central_institution(G: nx.Graph, letter_codes: list[str], central_institution_connection_percentage: float = P.CENTRAL_INSTITUTION_CONNECTION_PERCENTAGE):
         central_institution = "CENTRAL_INSTITUTION"
         G.add_node(central_institution, is_central_institution=True, behavior_b=False)
-        num_connections = int(P.CENTRAL_INSTITUTION_CONNECTIONS * len(G.nodes())) # number of connections to random nodes
+        num_connections = int(central_institution_connection_percentage * len(G.nodes())) # number of connections to random nodes
         random_nodes = random.sample(letter_codes, num_connections)
         for node in random_nodes:
             G.add_edge(central_institution, node)

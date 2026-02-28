@@ -1,6 +1,6 @@
 import networkx as nx
 import parameters as P
-from visualizer import Visualization as viz
+from utility.visualizer import Visualization as viz
 
 layout_functions = {
     'spring': viz.spring_lay,
@@ -9,10 +9,10 @@ layout_functions = {
 }
 
 class Infection:
-    def pass_infection(self, graph: nx.Graph):
+    def pass_infection(self, graph: nx.Graph, infection_threshold: float = P.INFECTION_THRESHOLD):
         # Complex Contagion infection model: if x fraction of p node's neighbors are infected, it becomes infected
         # get the central institution's neighbors
-        central_neighbors = [n for n in graph.neighbors(node) if graph.nodes[n].get('is_central_institution', False)]
+        central_neighbors = [node for node in graph.neighbors("CENTRAL_INSTITUTION") if graph.nodes[node].get('is_central_institution', False)]
         for node in graph.nodes():
             if graph.nodes[node].get('is_central_institution', False):
                 continue  # Skip central institutions
@@ -26,7 +26,7 @@ class Infection:
                     infected_neighbors += sum(1 for n in graph.neighbors(central_node) if graph.nodes[n].get('behavior_b', False))
                     neighbors += list(graph.neighbors(central_node))
             infection_fraction = infected_neighbors / len(neighbors)
-            if infection_fraction >= P.INFECTION_THRESHOLD:
+            if infection_fraction >= infection_threshold:
                 graph.nodes[node]['behavior_b'] = True
 
     def count_infected(self, graph: nx.Graph):
@@ -43,24 +43,22 @@ class Infection:
         ]
         states.append((gr.copy(), node_colors.copy()))
 
-    def run_simulation(self, iterations: int = 10, seed: int = 42, control_random: bool = False, G: nx.Graph = None):
+    def run_simulation(self, G: nx.Graph, iterations: int = 10, seed: int = 42, control_random: bool = False):
         # g, edge_mat, node_list = Setup.gen_graph(t=P.GRAPH_TYPE, n_nodes=P.NUM_NODES, seed=seed, control_random=control_random)
         penulti, final = None, None
-        if G is not None:
-            g = G
         node_colors = [
-            "lightgray" if g.nodes[node].get('is_central_institution', False)
-            else "red" if g.nodes[node].get('behavior_b', False)
+            "lightgray" if G.nodes[node].get('is_central_institution', False)
+            else "red" if G.nodes[node].get('behavior_b', False)
             else "lightblue"
-            for node in g.nodes()
+            for node in G.nodes()
         ]
-        layout = layout_functions.get(P.LAYOUT, viz.spring_lay)(g)
-        states = [(g.copy(), node_colors.copy())]
+        layout = layout_functions.get(P.LAYOUT, viz.spring_lay)(G)
+        states = [(G.copy(), node_colors.copy())]
         for i in range(iterations):
-            self.infect_cycle(gr=g, states=states)
-            cur_count = self.count_infected(g)
-            if (cur_count == penulti and cur_count == final) or cur_count == len(g.nodes()):
-                print(f"Stopping early at iteration {i} as infection count converged at {cur_count}/{len(g.nodes()) - 1}.")
+            self.infect_cycle(gr=G, states=states)
+            cur_count = self.count_infected(G)
+            if (cur_count == penulti and cur_count == final) or cur_count == len(G.nodes()):
+                print(f"Stopping early at iteration {i + 1} as infection count converged at {cur_count}/{len(G.nodes()) - 1}.")
                 break
             penulti, final = final, cur_count
         return states, layout

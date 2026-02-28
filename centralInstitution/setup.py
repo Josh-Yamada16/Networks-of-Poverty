@@ -4,8 +4,8 @@ import numpy as np
 import parameters as P
 from collections import defaultdict
 from typing import Tuple
-from utils import Utils as utils
-from visualizer import Visualization as viz
+from utility.utils import Utils as utils
+from utility.visualizer import Visualization as viz
 
 class Setup:
 
@@ -16,14 +16,14 @@ class Setup:
         nx.relabel_nodes(G, mapping, copy=False)
 
     @staticmethod
-    def gen_graph(t: str, n_nodes: int, seed: int = 42, control_random: bool = False) -> Tuple[nx.Graph, np.ndarray, list]:
-        if P.CONTROL_RANDOM_SEED or control_random:
-            random.seed(seed)
-            np.random.seed(seed)
+    def gen_graph(t: str, n_nodes: int) -> Tuple[nx.Graph, np.ndarray, list]:
+        if P.CONTROL_RANDOM_SEED:
+            random.seed(P.RANDOM_SEED)
+            np.random.seed(P.RANDOM_SEED)
         graph_types = {
-            "erd": (lambda: nx.erdos_renyi_graph(n=n_nodes, p=0.3, seed=seed), "erdos_renyi"),
-            "wat": (lambda: nx.newman_watts_strogatz_graph(n=n_nodes, k=2, p=0.5, seed=seed), "watts_strogatz"),
-            "bara": (lambda: nx.barabasi_albert_graph(n=n_nodes, m=2, seed=seed), "barabasi_albert"),
+            "erd": (lambda: nx.erdos_renyi_graph(n=n_nodes, p=0.3, seed=P.RANDOM_SEED), "erdos_renyi"),
+            "wat": (lambda: nx.newman_watts_strogatz_graph(n=n_nodes, k=2, p=0.5, seed=P.RANDOM_SEED), "watts_strogatz"),
+            "bara": (lambda: nx.barabasi_albert_graph(n=n_nodes, m=2, seed=P.RANDOM_SEED), "barabasi_albert"),
             "cir": (lambda: nx.circulant_graph(n=n_nodes, offsets=[1, 3]), "circulant"),
             "lat": (lambda: nx.triangular_lattice_graph(m=3, n=3), "triangular_lattice"),
             "barb": (lambda: nx.barbell_graph(m1=10, m2=15), "barbell"),
@@ -36,7 +36,7 @@ class Setup:
             blocks = P.STOCHASTIC_BLOCKS
             parts = utils.divide_integer(n_nodes, blocks)
             probs = utils.generate_symmetric_prob_matrix(n_blocks=blocks)
-            G = nx.stochastic_block_model(sizes=parts, p=probs, seed=seed)
+            G = nx.stochastic_block_model(sizes=parts, p=probs, seed=P.RANDOM_SEED)
             G.graph["type"] = "stochastic_block"
         elif t == "dir":
             G = nx.MultiDiGraph()
@@ -61,7 +61,7 @@ class Setup:
             G = utils.adj_list_to_graph(P.CUSTOM_GRAPH, directed_graph=True)
             G.graph["type"] = "custom"
         else:
-            G = nx.random_regular_graph(d=3, n=n_nodes, seed=seed)
+            G = nx.random_regular_graph(d=3, n=n_nodes, seed=P.RANDOM_SEED)
             G.graph["type"] = "random_regular"
 
         if t != "dir":

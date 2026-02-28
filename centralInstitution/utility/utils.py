@@ -137,10 +137,14 @@ class Utils:
         codes = []
         for first in letters:
             for second in letters:
-                codes.append(first + second)
-                if len(codes) == n:
-                    return codes
-        raise ValueError("Exceeded 26 × 26 = 676 possible two-letter codes")
+                for third in letters:
+                    if len(codes) < n:
+                        codes.append(first + second + third)
+                    else:
+                        return codes
+        if len(codes) < n:
+            raise ValueError("Exceeded 26 × 26 × 26 = 17,576 possible three-letter codes")
+        return codes
     
     @staticmethod
     def average_degree(G: nx.Graph) -> float:

@@ -18,7 +18,7 @@ class Visualization:
             else "lightblue"
             for node in G.nodes()
         ]
-        nx.draw(G, pos, with_labels=True, node_size=700, node_color=node_colors, font_size=10, font_color='black', edge_color='gray')
+        nx.draw(G, pos, with_labels=True, node_size=250, node_color=node_colors, font_size=10, font_color='black', edge_color='gray')
         plt.title(title)
         plt.show()
     
@@ -39,7 +39,7 @@ class Visualization:
     @staticmethod
     def draw_graph_initial(g: nx.Graph, layout, title, node_colors):
         fig, ax = plt.subplots()
-        nx.draw(g, pos=layout, with_labels=True, node_color=node_colors, node_size=500,\
+        nx.draw(g, pos=layout, with_labels=True, node_color=node_colors, node_size=250,\
                  font_color="white", font_size=15, font_weight='bold', width=3,\
                       edge_color='lightgray', cmap="viridis", ax=ax)
         # Visualization.draw_node_labels(g, layout, ax)
