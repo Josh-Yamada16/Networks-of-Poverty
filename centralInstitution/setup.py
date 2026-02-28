@@ -34,7 +34,7 @@ class Setup:
             G.graph["type"] = graph_types[t][1]
         elif t == "sto":
             blocks = P.STOCHASTIC_BLOCKS
-            parts = Setup.divide_integer(n_nodes, blocks)
+            parts = utils.divide_integer(n_nodes, blocks)
             probs = utils.generate_symmetric_prob_matrix(n_blocks=blocks)
             G = nx.stochastic_block_model(sizes=parts, p=probs, seed=seed)
             G.graph["type"] = "stochastic_block"
@@ -131,13 +131,6 @@ class Setup:
                     mat[i, col] = 1.0 / len(neighbors)
         Setup.check_for_loners(mat)
         return mat
-    
-    @staticmethod
-    def divide_integer(total, n_parts) -> np.ndarray:
-        if n_parts <= 0:
-            return np.array([])
-        cuts = sorted(random.sample(range(1, int(total)), n_parts - 1))
-        return np.array([a - b for a, b in zip(cuts + [int(total)], [0] + cuts)])
     
     @staticmethod
     def get_node_neighbors(G: nx.Graph):

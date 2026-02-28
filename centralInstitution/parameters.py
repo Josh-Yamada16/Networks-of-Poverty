@@ -1,10 +1,10 @@
 # Parameters for Main
 SHOW_PLOT = True  # Whether to show the plot at the end of the simulation
-CONTROL_RANDOM_SEED = False  # Whether to control random seed for reproducibility
+CONTROL_RANDOM_SEED = True  # Whether to control random seed for reproducibility
 RANDOM_SEED = 42  # Random seed for reproducibility
 GENERATE_LEDGER = True  # Whether to generate a ledger of transactions
 MAX_STINGY_BEHAVIORS = 100  # Maximum number of stingy behaviors allowed in the simulation
-NUM_ITERATIONS = 15  # Number of iterations for the token exchange simulation
+NUM_ITERATIONS = 10  # Number of iterations for the token exchange simulation
 LAYOUT = "spring"  # Layout for the graph visualization (e.g., "spring", "circular")
 DRAW_INITIAL_GRAPH = True # Whether to draw the initial graph
 
@@ -46,8 +46,14 @@ KEEP_HIGH = 0.4
 CENTRAL_INSTITUTION_CONNECTIONS = 0.3  # Fraction of early adopter nodes that the central institution connects to
 
 # Parameters for Infection
-INFECTION_THRESHOLD = 0.4  # Fraction of neighbors that must be infected for
+INFECTION_THRESHOLD = 0.3  # Fraction of neighbors that must be infected for a node to become infected
 
+# Parameters for Basic Setup
+CENTRAL_INSTITUTION_TOGGLE = True  # Whether to add a central institution and spread behavior_b at the start of the simulation
+INIT_INFECTED_NODES = 5  # Number of nodes to initially infect with behavior_b at the start of the simulation
+PURE_RANDOMIZED_INITIAL_INFECTION = True  # Whether to randomly select initial infected nodes from the entire graph
+BLOCK_RANDOMIZED_INITIAL_INFECTION = False  # Whether to randomly select a block and then
+DISPERSED_BLOCK_INITIAL_INFECTION = False  # Whether to randomly select nodes from different blocks for initial infection
 
 # Parameters for Utils
 PRINT_PERCENT_CHANGE = False  # Whether to print percent changes in money distribution

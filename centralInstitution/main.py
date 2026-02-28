@@ -10,7 +10,6 @@ def main():
     sim = BasicSetup()
     sim.setup_basic_simulation()
     G = sim.G
-    CI.spread_behavior_b(G, behavior_b=1)
     print(list(G.neighbors("CENTRAL_INSTITUTION")))
     print("Average degree:", Utils.average_degree(G))
 

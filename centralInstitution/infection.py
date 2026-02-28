@@ -11,6 +11,8 @@ layout_functions = {
 class Infection:
     def pass_infection(self, graph: nx.Graph):
         # Complex Contagion infection model: if x fraction of p node's neighbors are infected, it becomes infected
+        # get the central institution's neighbors
+        central_neighbors = [n for n in graph.neighbors(node) if graph.nodes[n].get('is_central_institution', False)]
         for node in graph.nodes():
             if graph.nodes[node].get('is_central_institution', False):
                 continue  # Skip central institutions
@@ -18,9 +20,17 @@ class Infection:
             if not neighbors:
                 continue
             infected_neighbors = sum(1 for n in neighbors if graph.nodes[n].get('behavior_b', False))
+            # if this node is connected to the central institution, it should access the central institution's neighbors as well
+            if any(graph.nodes[n].get('is_central_institution', False) for n in neighbors):
+                for central_node in central_neighbors:
+                    infected_neighbors += sum(1 for n in graph.neighbors(central_node) if graph.nodes[n].get('behavior_b', False))
+                    neighbors += list(graph.neighbors(central_node))
             infection_fraction = infected_neighbors / len(neighbors)
             if infection_fraction >= P.INFECTION_THRESHOLD:
                 graph.nodes[node]['behavior_b'] = True
+
+    def count_infected(self, graph: nx.Graph):
+        return sum(1 for node in graph.nodes() if graph.nodes[node].get('behavior_b', False))
 
     def infect_cycle(self, gr: nx.Graph, states):
         self.pass_infection(graph=gr)
@@ -35,6 +45,7 @@ class Infection:
 
     def run_simulation(self, iterations: int = 10, seed: int = 42, control_random: bool = False, G: nx.Graph = None):
         # g, edge_mat, node_list = Setup.gen_graph(t=P.GRAPH_TYPE, n_nodes=P.NUM_NODES, seed=seed, control_random=control_random)
+        penulti, final = None, None
         if G is not None:
             g = G
         node_colors = [
@@ -45,6 +56,11 @@ class Infection:
         ]
         layout = layout_functions.get(P.LAYOUT, viz.spring_lay)(g)
         states = [(g.copy(), node_colors.copy())]
-        for _ in range(iterations):
+        for i in range(iterations):
             self.infect_cycle(gr=g, states=states)
+            cur_count = self.count_infected(g)
+            if (cur_count == penulti and cur_count == final) or cur_count == len(g.nodes()):
+                print(f"Stopping early at iteration {i} as infection count converged at {cur_count}/{len(g.nodes()) - 1}.")
+                break
+            penulti, final = final, cur_count
         return states, layout

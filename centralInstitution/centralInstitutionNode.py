@@ -11,16 +11,6 @@ behavior_b_dictionary = {
 class CentralInstitutionNode:
     
     @staticmethod
-    def spread_behavior_b(G: nx.Graph, behavior_b: int):
-        central_inst = [node for node, data in G.nodes(data=True) if data.get('is_central_institution', False)]
-        if not central_inst:
-            raise ValueError("No central institution found in the graph.")
-        # spread the behavior_b to all nodes neighboring the central institution
-        for node in G.nodes:
-            if any(node in G.neighbors(central_node) for central_node in central_inst):
-                G.nodes[node]['behavior_b'] = True
-    
-    @staticmethod
     def relocate_central_institution(G: nx.Graph):
         # For simplicity, let's just move the central institution so it connects with randomly selected nodes
         central_inst = [node for node, data in G.nodes(data=True) if data.get('is_central_institution', False)]

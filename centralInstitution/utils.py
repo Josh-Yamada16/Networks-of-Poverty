@@ -146,3 +146,10 @@ class Utils:
     def average_degree(G: nx.Graph) -> float:
         avg_degree = sum(dict(G.degree()).values()) / G.number_of_nodes()
         return avg_degree
+    
+    @staticmethod
+    def divide_integer(total, n_parts) -> np.ndarray:
+        if n_parts <= 0:
+            return np.array([])
+        cuts = sorted(random.sample(range(1, int(total)), n_parts - 1))
+        return np.array([a - b for a, b in zip(cuts + [int(total)], [0] + cuts)])
