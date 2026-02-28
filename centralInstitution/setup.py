@@ -57,9 +57,9 @@ class Setup:
             G.add_nodes_from(G_undirected.nodes())
             G.add_edges_from([(u, v) for u, v in G_undirected.edges()] + [(v, u) for u, v in G_undirected.edges()])
             G.graph["type"] = "default"
-        elif t == "custom":
-            G = utils.adj_list_to_graph(P.CUSTOM_GRAPH, directed_graph=True)
-            G.graph["type"] = "custom"
+        # elif t == "custom":
+        #     G = utils.adj_list_to_graph(P.CUSTOM_GRAPH, directed_graph=True)
+        #     G.graph["type"] = "custom"
         else:
             G = nx.random_regular_graph(d=3, n=n_nodes, seed=P.RANDOM_SEED)
             G.graph["type"] = "random_regular"

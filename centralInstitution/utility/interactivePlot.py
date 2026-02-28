@@ -36,8 +36,14 @@ class InteractivePlot:
     def draw_current(self):
         self.ax.clear()
         g, node_colors = self.states[self.current_index]
+        # Override central institution color to orange
+        node_colors = [
+            "orange" if g.nodes[node].get('is_central_institution', False)
+            else node_colors[i]
+            for i, node in enumerate(g.nodes())
+        ]
         nx.draw(g, pos=self.layout, ax=self.ax, node_color=node_colors, with_labels=True,
-                edge_color='lightgray', width=3, node_size=1000, font_color='white')
+                edge_color='lightgray', width=2, node_size=500, font_color='white', font_size=10)
         # viz.draw_node_labels(g, self.layout, self.ax)
         if self.current_index == 0:
             self.ax.set_title("Initial State")

@@ -13,7 +13,7 @@ class Visualization:
         pos = nx.spring_layout(G)
         # pos = nx.circular_layout(G)
         node_colors = [
-            "lightgray" if G.nodes[node].get('is_central_institution', False)
+            "orange" if G.nodes[node].get('is_central_institution', False)
             else "red" if G.nodes[node].get('behavior_b', False)
             else "lightblue"
             for node in G.nodes()
