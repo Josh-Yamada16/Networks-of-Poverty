@@ -13,23 +13,24 @@ class Infection:
         # Complex Contagion infection model: if x fraction of p node's neighbors are infected, it becomes infected
         # get the central institution's neighbors
         central_neighbors = [node for node in graph.neighbors("CENTRAL_INSTITUTION") if graph.nodes[node].get('is_central_institution', False)]
+        infected_central_neighbors = sum(1 for n in central_neighbors if graph.nodes[n].get('behavior_b', False))
+        og_graph = graph.copy()  # Create a copy of the original graph to iterate over
         for node in graph.nodes():
             if graph.nodes[node].get('is_central_institution', False):
                 continue  # Skip central institutions
-            neighbors = list(graph.neighbors(node))
+            neighbors = set(graph.neighbors(node))
             if not neighbors:
-                continue
-            infected_neighbors = sum(1 for n in neighbors if graph.nodes[n].get('behavior_b', False))
+                continue  # Skip isolated nodes
+            infected_neighbors = sum(1 for n in neighbors if og_graph.nodes[n].get('behavior_b', False))
             # if this node is connected to the central institution, it should access the central institution's neighbors as well
             if any(graph.nodes[n].get('is_central_institution', False) for n in neighbors):
-                for central_node in central_neighbors:
-                    infected_neighbors += sum(1 for n in graph.neighbors(central_node) if graph.nodes[n].get('behavior_b', False))
-                    neighbors += list(graph.neighbors(central_node))
+                neighbors |= set(central_neighbors)
+                infected_neighbors += infected_central_neighbors
             infection_fraction = infected_neighbors / len(neighbors)
             if infection_fraction >= infection_threshold:
                 graph.nodes[node]['behavior_b'] = True
 
-    def count_infected(self, graph: nx.Graph):
+    def total_graph_infected(self, graph: nx.Graph):
         return sum(1 for node in graph.nodes() if graph.nodes[node].get('behavior_b', False))
 
     def infect_cycle(self, gr: nx.Graph, states):
@@ -56,7 +57,7 @@ class Infection:
         states = [(G.copy(), node_colors.copy())]
         for i in range(iterations):
             self.infect_cycle(gr=G, states=states)
-            cur_count = self.count_infected(G)
+            cur_count = self.total_graph_infected(G)
             if (cur_count == penulti and cur_count == final) or cur_count == len(G.nodes()):
                 print(f"Stopping early at iteration {i + 1} as infection count converged at {cur_count}/{len(G.nodes()) - 1}.")
                 break

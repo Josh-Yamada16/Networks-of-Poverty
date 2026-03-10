@@ -48,7 +48,7 @@ def main():
         plt.show()
 
     # Create GIF from simulation states
-    create_gif_from_states(states, layout)
+    # create_gif_from_states(states, layout)
 
 if __name__ == "__main__":
     main()

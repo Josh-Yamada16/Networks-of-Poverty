@@ -28,3 +28,10 @@
 
 ## How Behavior Spreads - Damon Centola
 - contagions should be able to spread through weak ties like how viruses spread through the vulnerable population
+
+ ## Central Institution behavior
+ - More institutions are added with constant amount of connections
+ - Institution grows in connections
+    - connections to other random nodes
+    - conenctions to neighbors of already connected nodes
+- Insitution moves around in the graph

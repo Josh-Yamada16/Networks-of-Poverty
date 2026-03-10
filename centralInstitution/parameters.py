@@ -4,7 +4,7 @@ LAYOUT = "spring"  # Layout for the graph visualization (e.g., "spring", "circul
 CONTROL_RANDOM_SEED = True  # Whether to control random seed for reproducibility
 RANDOM_SEED = 43  # Random seed for reproducibility
 DRAW_INITIAL_GRAPH = True # Whether to draw the initial graph
-SHOW_PLOT = False  # Whether to show the plot at the end of the simulation
+SHOW_PLOT = True  # Whether to show the plot at the end of the simulation
 
 # Parameters for Central Institution
 CENTRAL_INSTITUTION_CONNECTION_PERCENTAGE = 0.15  # Fraction of early adopter nodes that the central institution connects to
