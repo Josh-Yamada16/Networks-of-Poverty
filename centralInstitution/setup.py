@@ -36,7 +36,10 @@ class Setup:
             blocks = P.STOCHASTIC_BLOCKS
             parts = utils.divide_integer(n_nodes, blocks)
             probs = utils.generate_symmetric_prob_matrix(n_blocks=blocks)
+            sbm_assortativity_metrics = utils.sbm_assortativity_metrics(probs, block_proportions=np.array(parts) / n_nodes)
+            print("SBM Assortativity Metrics:", sbm_assortativity_metrics)
             G = nx.stochastic_block_model(sizes=parts, p=probs, seed=P.RANDOM_SEED)
+            print("SBM Degree Assortativity:", nx.degree_assortativity_coefficient(G))
             G.graph["type"] = "stochastic_block"
         elif t == "dir":
             G = nx.MultiDiGraph()

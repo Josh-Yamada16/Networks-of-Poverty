@@ -130,6 +130,68 @@ class Utils:
                     mat[i][j] = val
                     mat[j][i] = val
         return mat
+
+    @staticmethod
+    def sbm_assortativity_metrics(prob_matrix: np.ndarray, block_proportions: np.ndarray | None = None) -> dict:
+        """Compute assortativity-style diagnostics for an undirected SBM.
+
+        Args:
+            prob_matrix: KxK SBM probability matrix B.
+            block_proportions: Length-K vector pi. If None, assumes uniform block sizes.
+
+        Returns:
+            Dictionary with expected within-block edge share and normalized assortativity.
+        """
+        B = np.asarray(prob_matrix, dtype=float)
+        if B.ndim != 2 or B.shape[0] != B.shape[1]:
+            raise ValueError("prob_matrix must be a square matrix")
+
+        k = B.shape[0]
+        if block_proportions is None:
+            pi = np.full(k, 1.0 / k)
+        else:
+            pi = np.asarray(block_proportions, dtype=float)
+            if pi.ndim != 1 or pi.shape[0] != k:
+                raise ValueError("block_proportions must be a length-K vector")
+            if np.any(pi < 0):
+                raise ValueError("block_proportions cannot contain negative values")
+            total = float(np.sum(pi))
+            if total <= 0:
+                raise ValueError("block_proportions must have a positive sum")
+            pi = pi / total
+
+        within_mass = 0.5 * float(np.sum((pi ** 2) * np.diag(B)))
+        between_mass = 0.0
+        for i in range(k):
+            for j in range(i + 1, k):
+                between_mass += float(pi[i] * pi[j] * B[i, j])
+
+        total_mass = within_mass + between_mass
+        expected_within_fraction = (within_mass / total_mass) if total_mass > 0 else 0.0
+
+        chance_within = float(np.sum(pi ** 2))
+        denom = 1.0 - chance_within
+        normalized_assortativity = (
+            (expected_within_fraction - chance_within) / denom if denom > 0 else 0.0
+        )
+
+        within_weight = float(np.sum(pi ** 2))
+        between_weight = float(np.sum(np.triu(np.outer(pi, pi), k=1)))
+        within_prob_mean = (
+            float(np.sum((pi ** 2) * np.diag(B))) / within_weight if within_weight > 0 else 0.0
+        )
+        between_prob_mean = (
+            float(np.sum(np.triu(np.outer(pi, pi) * B, k=1))) / between_weight if between_weight > 0 else 0.0
+        )
+
+        return {
+            "expected_within_fraction": expected_within_fraction,
+            "chance_within_fraction": chance_within,
+            "normalized_assortativity": normalized_assortativity,
+            "within_prob_mean": within_prob_mean,
+            "between_prob_mean": between_prob_mean,
+            "is_assortative": within_prob_mean > between_prob_mean,
+        }
     
     @staticmethod
     def generate_letter_codes(n):
