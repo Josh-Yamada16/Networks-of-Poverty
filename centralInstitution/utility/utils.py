@@ -187,9 +187,9 @@ class Utils:
         return {
             "expected_within_fraction": expected_within_fraction,
             "chance_within_fraction": chance_within,
-            "normalized_assortativity": normalized_assortativity,
             "within_prob_mean": within_prob_mean,
             "between_prob_mean": between_prob_mean,
+            "normalized_assortativity": normalized_assortativity,
             "is_assortative": within_prob_mean > between_prob_mean,
         }
     

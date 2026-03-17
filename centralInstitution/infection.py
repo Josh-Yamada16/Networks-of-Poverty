@@ -31,7 +31,11 @@ class Infection:
                 graph.nodes[node]['behavior_b'] = True
 
     def total_graph_infected(self, graph: nx.Graph):
-        return sum(1 for node in graph.nodes() if graph.nodes[node].get('behavior_b', False))
+        return sum(
+            1 for node in graph.nodes()
+            if graph.nodes[node].get('behavior_b', False)
+            and not graph.nodes[node].get('is_central_institution', False)
+        )
 
     def infect_cycle(self, gr: nx.Graph, states):
         self.pass_infection(graph=gr)
@@ -47,6 +51,10 @@ class Infection:
     def run_simulation(self, G: nx.Graph, iterations: int = 10, seed: int = 42, control_random: bool = False):
         # g, edge_mat, node_list = Setup.gen_graph(t=P.GRAPH_TYPE, n_nodes=P.NUM_NODES, seed=seed, control_random=control_random)
         penulti, final = None, None
+        target_infectable = sum(
+            1 for node in G.nodes()
+            if not G.nodes[node].get('is_central_institution', False)
+        )
         node_colors = [
             "lightgray" if G.nodes[node].get('is_central_institution', False)
             else "red" if G.nodes[node].get('behavior_b', False)
@@ -58,8 +66,8 @@ class Infection:
         for i in range(iterations):
             self.infect_cycle(gr=G, states=states)
             cur_count = self.total_graph_infected(G)
-            if (cur_count == penulti and cur_count == final) or cur_count == len(G.nodes()):
-                print(f"Stopping early at iteration {i + 1} as infection count converged at {cur_count}/{len(G.nodes()) - 1}.")
+            if (cur_count == penulti and cur_count == final) or cur_count == target_infectable:
+                print(f"Stopping early at iteration {i + 1} as infection count converged at {cur_count}/{target_infectable}.")
                 break
             penulti, final = final, cur_count
         return states, layout

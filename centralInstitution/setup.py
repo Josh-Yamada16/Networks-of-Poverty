@@ -1,4 +1,5 @@
 import networkx as nx
+import networkx.algorithms.community as nx_comm
 import random
 import numpy as np
 import parameters as P
@@ -8,6 +9,65 @@ from utility.utils import Utils as utils
 from utility.visualizer import Visualization as viz
 
 class Setup:
+
+    @staticmethod
+    def _generate_hub_leaf_block_graph(sizes: np.ndarray, probs: np.ndarray) -> nx.Graph:
+        """Generate a block-structured graph with hub-leaf wiring inside blocks.
+
+        This pattern tends to keep modularity high (mostly within-block edges)
+        while pushing degree assortativity down (high-degree hubs connect to low-degree leaves).
+        """
+        G = nx.Graph()
+        block_nodes = []
+        start = 0
+        for block_id, size in enumerate(sizes):
+            nodes = list(range(start, start + int(size)))
+            block_nodes.append(nodes)
+            for n in nodes:
+                G.add_node(n, block=block_id)
+            start += int(size)
+
+        # Intra-block edges: hub-leaf dominant
+        for nodes in block_nodes:
+            if len(nodes) <= 1:
+                continue
+            hub_count = max(1, int(round(len(nodes) * P.SBM_HUB_FRACTION)))
+            hub_count = min(hub_count, len(nodes) - 1)
+            hubs = set(random.sample(nodes, hub_count))
+            leaves = [n for n in nodes if n not in hubs]
+
+            # Ensure each leaf gets at least one hub link when possible.
+            for leaf in leaves:
+                chosen_hub = random.choice(tuple(hubs))
+                G.add_edge(leaf, chosen_hub)
+
+            # Additional stochastic edges inside the block.
+            for i in range(len(nodes)):
+                for j in range(i + 1, len(nodes)):
+                    u, v = nodes[i], nodes[j]
+                    if G.has_edge(u, v):
+                        continue
+                    u_is_hub = u in hubs
+                    v_is_hub = v in hubs
+                    if u_is_hub and v_is_hub:
+                        p_intra = P.SBM_HUB_HUB_PROB
+                    elif (u_is_hub and not v_is_hub) or (v_is_hub and not u_is_hub):
+                        p_intra = P.SBM_HUB_LEAF_PROB
+                    else:
+                        p_intra = P.SBM_LEAF_LEAF_PROB
+                    if random.random() < p_intra:
+                        G.add_edge(u, v)
+
+        # Inter-block edges remain sparse to preserve community separation.
+        for i in range(len(block_nodes)):
+            for j in range(i + 1, len(block_nodes)):
+                p_between = float(probs[i, j]) * P.SBM_INTER_BLOCK_PROB_SCALE
+                p_between = max(0.0, min(1.0, p_between))
+                for u in block_nodes[i]:
+                    for v in block_nodes[j]:
+                        if random.random() < p_between:
+                            G.add_edge(u, v)
+        return G
 
     @staticmethod
     def rename_nodes_with_codes(G: nx.Graph):
@@ -36,10 +96,22 @@ class Setup:
             blocks = P.STOCHASTIC_BLOCKS
             parts = utils.divide_integer(n_nodes, blocks)
             probs = utils.generate_symmetric_prob_matrix(n_blocks=blocks)
-            sbm_assortativity_metrics = utils.sbm_assortativity_metrics(probs, block_proportions=np.array(parts) / n_nodes)
-            print("SBM Assortativity Metrics:", sbm_assortativity_metrics)
-            G = nx.stochastic_block_model(sizes=parts, p=probs, seed=P.RANDOM_SEED)
-            print("SBM Degree Assortativity:", nx.degree_assortativity_coefficient(G))
+            block_proportions = np.array(parts) / n_nodes
+            sbm_assortativity_metrics = utils.sbm_assortativity_metrics(probs, block_proportions=block_proportions)
+            print("SBM (matrix) assortativity:", f"{sbm_assortativity_metrics['normalized_assortativity']:.2f}")
+
+            if P.SBM_STRUCTURE_MODE == "hub_leaf":
+                G = Setup._generate_hub_leaf_block_graph(sizes=parts, probs=probs)
+            else:
+                G = nx.stochastic_block_model(sizes=parts, p=probs, seed=P.RANDOM_SEED)
+
+            print("SBM Degree Assortativity:", f"{nx.degree_assortativity_coefficient(G):.2f}")
+            planted_communities = [
+                set(n for n, d in G.nodes(data=True) if d.get("block") == b)
+                for b in range(blocks)
+            ]
+            Q = nx_comm.modularity(G, planted_communities)
+            print("SBM Modularity:", f"{Q:.2f}")
             G.graph["type"] = "stochastic_block"
         elif t == "dir":
             G = nx.MultiDiGraph()

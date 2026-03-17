@@ -38,7 +38,7 @@ def main():
     G = sim.G
     print("Number of neighbors of central institution:", len(list(G.neighbors("CENTRAL_INSTITUTION"))))
     print("Number of nodes:", len(G.nodes()))
-    print("Average degree of a node:", Utils.average_degree(G))
+    print("Average degree of a node:", f"{Utils.average_degree(G):.2f}")
     print("Number of initially infected nodes:", int(P.PERCENTAGE_OF_INFECTED_NODES * len(G.nodes())))
 
     states, layout = Infection().run_simulation(G=G, iterations=P.NUM_ITERATIONS, seed=P.RANDOM_SEED)

@@ -1,7 +1,7 @@
 # Parameters for Main
-NUM_ITERATIONS = 10  # Number of iterations for the token exchange simulation
+NUM_ITERATIONS = 15  # Number of iterations for the token exchange simulation
 LAYOUT = "spring"  # Layout for the graph visualization (e.g., "spring", "circular")
-CONTROL_RANDOM_SEED = True  # Whether to control random seed for reproducibility
+CONTROL_RANDOM_SEED = False  # Whether to control random seed for reproducibility
 RANDOM_SEED = 43  # Random seed for reproducibility
 DRAW_INITIAL_GRAPH = True # Whether to draw the initial graph
 SHOW_PLOT = True  # Whether to show the plot at the end of the simulation
@@ -24,7 +24,7 @@ INITIAL_INFECTION_TYPE_DICTIONARY = {
 }
 
 # Parameters for Graph Generation
-NUM_NODES = 101  # Number of nodes in the graph (matching your custom graph)
+NUM_NODES = 100  # Number of nodes in the graph (matching your custom graph)
 GRAPH_TYPE = "sto"  # Type of graph to generate (e.g., "erd", "wat", "bara", "cir", "lat", "barb", "sto", "reg")
 
 CUSTOM_MONEY = [100, 50, 75, 200, 150, 80, 120, 90, 60, 110, 130, 70]  # Custom money distribution for the custom graph (12 nodes)
@@ -36,8 +36,20 @@ RANDOMIZE_WEIGHTS = False  # Added to fix missing parameter error
 
 # Parameters for Stochastic Block Model
 STOCHASTIC_BLOCKS = 4
-INTRA_BLOCK_PROB_LOW = 0.6  # Probability of edges within a block
-INTRA_BLOCK_PROB_HIGH = 0.9  # Probability of edges within a block
-EXTRA_BLOCK_PROB_LOW = 0.01  # Probability of edges between blocks
-EXTRA_BLOCK_PROB_HIGH = 0.04  # Probability of edges between blocks
+INTRA_BLOCK_PROB_LOW = 0.1  # Probability of edges within a block
+INTRA_BLOCK_PROB_HIGH = 0.3  # Probability of edges within a block
+EXTRA_BLOCK_PROB_LOW = 0.1  # Probability of edges between blocks
+EXTRA_BLOCK_PROB_HIGH = 0.3  # Probability of edges between blocks
+
+# SBM structure mode
+# "random": standard nx.stochastic_block_model
+# "hub_leaf": higher modularity + lower degree assortativity pattern inside blocks
+SBM_STRUCTURE_MODE = "hub_leaf"
+
+# Hub-leaf SBM controls (used only when SBM_STRUCTURE_MODE == "hub_leaf")
+SBM_HUB_FRACTION = 0.12
+SBM_HUB_LEAF_PROB = 0.65
+SBM_HUB_HUB_PROB = 0.10
+SBM_LEAF_LEAF_PROB = 0.03
+SBM_INTER_BLOCK_PROB_SCALE = 0.25
 
