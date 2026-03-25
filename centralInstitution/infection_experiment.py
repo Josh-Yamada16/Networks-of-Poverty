@@ -1,5 +1,3 @@
-
-
 import matplotlib.pyplot as plt
 import sys
 import os
@@ -8,7 +6,6 @@ import parameters as params
 from infection import Infection
 from basicsimSetup import BasicSimSetup
 import importlib
-
 
 
 # Variables to experiment with
@@ -55,16 +52,16 @@ for ci_conn_perc in central_institution_connection_percentages:
                         if G.nodes[node].get('is_central_institution', False):
                             continue
                         neighbors = set(G.neighbors(node))
-                        infected_neighbors = sum(1 for n in neighbors if G.nodes[n].get('behavior_b', False))
+                        infected_neighbors = sum(1 for n in neighbors if G.nodes[n].get('infected', False))
                         # If node is connected to central institution, add its neighbors
                         if any(G.nodes[n].get('is_central_institution', False) for n in neighbors):
                             central_neighbors = [n for n in G.neighbors("CENTRAL_INSTITUTION") if G.nodes[n].get('is_central_institution', False)]
                             for central_node in central_neighbors:
                                 neighbors.update(G.neighbors(central_node))
-                                infected_neighbors += sum(1 for n in G.neighbors(central_node) if G.nodes[n].get('behavior_b', False))
+                                infected_neighbors += sum(1 for n in G.neighbors(central_node) if G.nodes[n].get('infected', False))
                         infection_fraction = infected_neighbors / len(neighbors) if neighbors else 0
                         if infection_fraction >= threshold:
-                            G.nodes[node]['behavior_b'] = True
+                            G.nodes[node]['infected'] = True
                     infected_now = infection_model.count_infected(G)
                     infected_counts.append(infected_now)
                     if (i+1) % 1 == 0 or i == NUM_ITERATIONS-1 or i == ci_added_at:

@@ -36,7 +36,7 @@ class BasicSimSetup:
 
         for node in G.nodes():
             if node in random_nodes:
-                G.nodes[node]['behavior_b'] = True
+                G.nodes[node]['infected'] = True
 
     def setup_basic_simulation(self, n_nodes: int = P.NUM_NODES, central_institution_toggle: bool = P.CENTRAL_INSTITUTION_TOGGLE):
         # create n nodes with letter codes as labels

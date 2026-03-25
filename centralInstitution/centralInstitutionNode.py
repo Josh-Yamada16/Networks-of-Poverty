@@ -2,7 +2,7 @@ import random
 import parameters as P
 import networkx as nx
 
-behavior_b_dictionary = {
+infected_dictionary = {
     1: "Always stingy",
     2: "Stingy if lost money in previous cycle",
     3: "Stingy if lost money in any previous cycle"
@@ -25,9 +25,13 @@ class CentralInstitutionNode:
     @staticmethod
     def add_central_institution(G: nx.Graph, letter_codes: list[str], central_institution_connection_percentage: float = P.CENTRAL_INSTITUTION_CONNECTION_PERCENTAGE):
         central_institution = "CENTRAL_INSTITUTION"
-        G.add_node(central_institution, is_central_institution=True, behavior_b=False)
+        G.add_node(central_institution, is_central_institution=True, infected=False)
         num_connections = int(central_institution_connection_percentage * len(G.nodes())) # number of connections to random nodes
         random_nodes = random.sample(letter_codes, num_connections)
         for node in random_nodes:
             G.add_edge(central_institution, node)
+
+        infected_neighbors = sum(1 for node in G.neighbors(central_institution) if not G.nodes[node].get('is_central_institution', False) and G.nodes[node].get('infected', False))
+
+        print(f"Neighbors already infected: {infected_neighbors} / {num_connections}")
         return G

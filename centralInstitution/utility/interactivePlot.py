@@ -8,7 +8,7 @@ class InteractivePlot:
     def __init__(self, states, layout):
         self.states = states  # list of (graph, layout, title, node_colors)
         self.current_index = 0
-        self.layout = layout
+        self.layout = dict(layout)
         self._auto_running = False
         self.cbar = None
         self.ani = None
@@ -33,32 +33,24 @@ class InteractivePlot:
         self.next_button.on_clicked(self.next)
         self.loop_button.on_clicked(self.toggle_loop)
 
+    def _layout_for_graph(self, g):
+        missing_nodes = [node for node in g.nodes() if node not in self.layout]
+        if missing_nodes:
+            fixed_nodes = [node for node in g.nodes() if node in self.layout]
+            # Keep existing node positions stable and only place newly added nodes.
+            self.layout = nx.spring_layout(g, pos=self.layout, fixed=fixed_nodes, seed=42)
+        return self.layout
+
     def draw_current(self):
         self.ax.clear()
         g, node_colors = self.states[self.current_index]
-        # Override central institution color to orange
-        node_colors = [
-            "orange" if g.nodes[node].get('is_central_institution', False)
-            else node_colors[i]
-            for i, node in enumerate(g.nodes())
-        ]
-        nx.draw(g, pos=self.layout, ax=self.ax, node_color=node_colors, with_labels=True,
+        render_layout = self._layout_for_graph(g)
+        nx.draw(g, pos=render_layout, ax=self.ax, node_color=node_colors, with_labels=True,
                 edge_color='lightgray', width=2, node_size=500, font_color='white', font_size=10)
-        # viz.draw_node_labels(g, self.layout, self.ax)
         if self.current_index == 0:
             self.ax.set_title("Initial State")
         else:
             self.ax.set_title(f"Iteration {self.current_index}")
-
-        # Manage colorbar
-        # if self.cbar is not None:
-        #     self.cbar.remove()
-        #     self.cbar = None
-        # sm = plt.cm.ScalarMappable(cmap='coolwarm', norm=plt.Normalize(vmin=min(node_colors), vmax=max(node_colors)))
-        # sm.set_array([])
-        # cax = self.fig.add_axes([0.91, 0.25, 0.02, 0.5])
-        # self.cbar = self.fig.colorbar(sm, cax=cax)
-        # self.cbar.set_label('Money')
 
         self.fig.canvas.draw_idle()
 

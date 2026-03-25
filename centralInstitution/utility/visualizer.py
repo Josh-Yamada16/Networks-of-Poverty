@@ -1,11 +1,20 @@
-from platform import node
-
 import networkx as nx
 import matplotlib.pyplot as plt
 
 class Visualization:
     spring_lay = lambda x: nx.spring_layout(x, seed=42)
     circ_lay = lambda x: nx.circular_layout(x)
+
+    @staticmethod
+    def _layout_for_graph(g: nx.Graph, layout):
+        if layout is None:
+            return nx.spring_layout(g, seed=42)
+        if isinstance(layout, dict):
+            missing_nodes = [node for node in g.nodes() if node not in layout]
+            if missing_nodes:
+                fixed_nodes = [node for node in g.nodes() if node in layout]
+                return nx.spring_layout(g, pos=layout, fixed=fixed_nodes, seed=42)
+        return layout
     
     @staticmethod
     def visualize_network(G, title="Network Visualization"):
@@ -14,7 +23,7 @@ class Visualization:
         # pos = nx.circular_layout(G)
         node_colors = [
             "orange" if G.nodes[node].get('is_central_institution', False)
-            else "red" if G.nodes[node].get('behavior_b', False)
+            else "red" if G.nodes[node].get('infected', False)
             else "lightblue"
             for node in G.nodes()
         ]
@@ -25,7 +34,10 @@ class Visualization:
     @staticmethod
     def draw_node_labels(g, pos, ax):
         for node, (x, y) in pos.items():
-            label = f"${g.nodes[node]['money']:.2f}"  # Format money however you want
+            money = g.nodes[node].get('money')
+            if money is None:
+                continue
+            label = f"${money:.2f}"  # Format money however you want
             ax.text(
                 x, y - 0.03,                  # Adjust Y-position to move below node
                 label,
@@ -39,7 +51,8 @@ class Visualization:
     @staticmethod
     def draw_graph_initial(g: nx.Graph, layout, title, node_colors):
         fig, ax = plt.subplots()
-        nx.draw(g, pos=layout, with_labels=True, node_color=node_colors, node_size=250,\
+        render_layout = Visualization._layout_for_graph(g, layout)
+        nx.draw(g, pos=render_layout, with_labels=True, node_color=node_colors, node_size=250,\
                  font_color="white", font_size=15, font_weight='bold', width=3,\
                       edge_color='lightgray', cmap="viridis", ax=ax)
         # Visualization.draw_node_labels(g, layout, ax)
@@ -51,8 +64,9 @@ class Visualization:
     @staticmethod
     def redraw(g: nx.Graph, layout, title, node_colors, ax):
         ax.cla()
-        nx.draw_networkx_edges(g, layout, ax=ax, edge_color='lightgray', width=2)
-        nx.draw_networkx_nodes(g, layout, node_color=node_colors, cmap="viridis", ax=ax)
-        Visualization.draw_node_labels(g, layout, ax)
+        render_layout = Visualization._layout_for_graph(g, layout)
+        nx.draw_networkx_edges(g, render_layout, ax=ax, edge_color='lightgray', width=2)
+        nx.draw_networkx_nodes(g, render_layout, node_color=node_colors, cmap="viridis", ax=ax)
+        Visualization.draw_node_labels(g, render_layout, ax)
         ax.set_title(title)
         plt.waitforbuttonpress()

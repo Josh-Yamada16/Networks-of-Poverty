@@ -18,7 +18,7 @@ def create_gif_from_states(states, layout, out_gif='graph_evolution.gif'):
         G = state[0] if isinstance(state, tuple) else state
         node_colors = [
             "orange" if G.nodes[node].get('is_central_institution', False)
-            else "red" if G.nodes[node].get('behavior_b', False)
+            else "red" if G.nodes[node].get('infected', False)
             else "lightblue"
             for node in G.nodes()
         ]
@@ -41,7 +41,7 @@ def main():
     print("Average degree of a node:", f"{Utils.average_degree(G):.2f}")
     print("Number of initially infected nodes:", int(P.PERCENTAGE_OF_INFECTED_NODES * len(G.nodes())))
 
-    states, layout = Infection().run_simulation(G=G, iterations=P.NUM_ITERATIONS, seed=P.RANDOM_SEED)
+    states, layout = Infection().run_simulation(G=G, iterations=P.NUM_ITERATIONS, seed=P.RANDOM_SEED, central_institution_toggle=P.CENTRAL_INSTITUTION_TOGGLE)
     interactive = InteractivePlot(states=states, layout=layout)
     interactive.draw_current()
     if P.SHOW_PLOT:
