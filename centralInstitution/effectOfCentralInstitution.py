@@ -60,11 +60,13 @@ def main():
         print(f"[Phase 2] Adding Central Institution...")
         print(f"Converged before adding central institution at {infected_counts[-1]}/{target_infectable} infected nodes.")
         CI.add_central_institution(G, list(G.nodes()), P.CENTRAL_INSTITUTION_CONNECTION_PERCENTAGE)
+        print(f"Central institution connected to {len(list(G.neighbors('CENTRAL_INSTITUTION')))} nodes")
         states2, _ = infection_model.run_simulation(
             G=G,
             iterations=P.NUM_ITERATIONS,
             seed=P.RANDOM_SEED,
-            central_institution_toggle=True
+            central_institution_toggle=True,
+            first_phase_2=True
         )
         states += states2
     else:
@@ -79,6 +81,7 @@ def main():
     interactive.draw_current()
     if P.SHOW_PLOT:
         plt.show()
+    print("**Simulation Complete**")
 
 if __name__ == "__main__":
     main()
