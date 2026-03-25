@@ -35,3 +35,19 @@
     - connections to other random nodes
     - conenctions to neighbors of already connected nodes
 - Insitution moves around in the graph
+
+## Experiments
+
+- Infection threshold: try 0.45 to 0.70
+- Initial infected fraction: try 0.02 to 0.15
+- Central institution connection percentage: try 0.20 to 0.60
+- Number of iterations before intervention condition
+- Network community strength knobs (inter-block and within-block connectivity)
+- Hub-leaf knobs (hub fraction, hub-leaf probability, leaf-leaf probability)
+- Initial infection type (random vs block-seeded vs dispersed)
+
+- Suggested sweep:
+    - threshold: 0.50, 0.55, 0.60
+    - initial infected: 0.03, 0.07, 0.10
+    - CI connection: 0.20, 0.35, 0.50
+    - record infection at intervention time, final infection, delta after intervention, and iterations to convergence

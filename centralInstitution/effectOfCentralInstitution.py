@@ -76,10 +76,10 @@ def main():
         )
 
     print("=" * 40)
-    print("Rendering interactive plot...")
     interactive = InteractivePlot(states=states, layout=layout)
     interactive.draw_current()
     if P.SHOW_PLOT:
+        print("Rendering interactive plot...")
         plt.show()
     print("**Simulation Complete**")
 

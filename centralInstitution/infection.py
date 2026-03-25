@@ -77,7 +77,7 @@ class Infection:
         layout = layout_functions.get(P.LAYOUT, viz.spring_lay)(G)
         states = [(G.copy(), node_colors.copy())]
         for i in range(iterations):
-            is_first_phase2_cycle = (i == 0 and first_phase_2 and central_institution_toggle)
+            is_first_phase2_cycle = (i == 0 and first_phase_2 and central_institution_toggle and P.PRINT_DEBUG)
             self.infect_cycle(gr=G, states=states, central_institution_toggle=central_institution_toggle, debug=is_first_phase2_cycle)
             cur_count = self.total_graph_infected(G)
             if is_first_phase2_cycle:

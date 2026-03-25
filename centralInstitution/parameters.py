@@ -10,6 +10,7 @@ SHOW_PLOT = False  # Whether to show the plot at the end of the simulation
 CENTRAL_INSTITUTION_CONNECTION_PERCENTAGE = 0.2  # Fraction of early adopter nodes that the central institution connects to
 
 # Parameters for Infection
+PRINT_DEBUG = False  # Whether to print debug information during infection cycles
 INFECTION_THRESHOLD = 0.4  # Fraction of neighbors that must be infected for a node to become infected
 
 # Parameters for Basic Setup
