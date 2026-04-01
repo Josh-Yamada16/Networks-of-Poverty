@@ -9,8 +9,10 @@ layout_functions = {
 }
 
 class Infection:
-    def pass_infection(self, graph: nx.Graph, infection_threshold: float = P.INFECTION_THRESHOLD, central_institution_toggle: bool = False, debug: bool = False):
+    def pass_infection(self, graph: nx.Graph, infection_threshold: float = None, central_institution_toggle: bool = False, debug: bool = False):
         # Complex Contagion infection model: if x fraction of p node's neighbors are infected, it becomes infected
+        if infection_threshold is None:
+            infection_threshold = P.INFECTION_THRESHOLD
         # Cache non-central neighbors of the institution once per cycle.
         central_neighbors = set()
         if central_institution_toggle and graph.has_node("CENTRAL_INSTITUTION"):
@@ -50,8 +52,13 @@ class Infection:
             and not graph.nodes[node].get('is_central_institution', False)
         )
 
-    def infect_cycle(self, gr: nx.Graph, states, central_institution_toggle: bool = False, debug: bool = False):
-        self.pass_infection(graph=gr, central_institution_toggle=central_institution_toggle, debug=debug)
+    def infect_cycle(self, gr: nx.Graph, states, central_institution_toggle: bool = False, debug: bool = False, infection_threshold: float = None):
+        self.pass_infection(
+            graph=gr,
+            infection_threshold=infection_threshold,
+            central_institution_toggle=central_institution_toggle,
+            debug=debug,
+        )
 
         node_colors = [
             "orange" if gr.nodes[node].get('is_central_institution', False)
@@ -61,7 +68,7 @@ class Infection:
         ]
         states.append((gr.copy(), node_colors.copy()))
 
-    def run_simulation(self, G: nx.Graph, iterations: int = 10, central_institution_toggle: bool = False, seed: int = 42, control_random: bool = False, first_phase_2: bool = False):
+    def run_simulation(self, G: nx.Graph, iterations: int = 10, central_institution_toggle: bool = False, seed: int = 42, control_random: bool = False, first_phase_2: bool = False, infection_threshold: float = None):
         # g, edge_mat, node_list = Setup.gen_graph(t=P.GRAPH_TYPE, n_nodes=P.NUM_NODES, seed=seed, control_random=control_random)
         penulti, final = None, None
         target_infectable = sum(
@@ -78,7 +85,13 @@ class Infection:
         states = [(G.copy(), node_colors.copy())]
         for i in range(iterations):
             is_first_phase2_cycle = (i == 0 and first_phase_2 and central_institution_toggle and P.PRINT_DEBUG)
-            self.infect_cycle(gr=G, states=states, central_institution_toggle=central_institution_toggle, debug=is_first_phase2_cycle)
+            self.infect_cycle(
+                gr=G,
+                states=states,
+                central_institution_toggle=central_institution_toggle,
+                debug=is_first_phase2_cycle,
+                infection_threshold=infection_threshold,
+            )
             cur_count = self.total_graph_infected(G)
             if is_first_phase2_cycle:
                 print(f"  After first cycle: {cur_count} infected nodes")
