@@ -23,11 +23,23 @@ class CentralInstitutionNode:
         CentralInstitutionNode.add_central_institution(G, list(G.nodes()), P.CENTRAL_INSTITUTION_CONNECTION_PERCENTAGE)
     
     @staticmethod
-    def add_central_institution(G: nx.Graph, letter_codes: list[str], central_institution_connection_percentage: float = P.CENTRAL_INSTITUTION_CONNECTION_PERCENTAGE):
-        central_institution = "CENTRAL_INSTITUTION"
+    def add_central_institution(
+        G: nx.Graph,
+        letter_codes: list[str],
+        central_institution_connection_percentage: float = P.CENTRAL_INSTITUTION_CONNECTION_PERCENTAGE,
+        node_name: str = "CENTRAL_INSTITUTION",
+    ):
+        central_institution = node_name
+        if G.has_node(central_institution):
+            raise ValueError(f"Node '{central_institution}' already exists in the graph.")
         G.add_node(central_institution, is_central_institution=True, infected=False)
-        num_connections = int(central_institution_connection_percentage * len(G.nodes())) # number of connections to random nodes
-        random_nodes = random.sample(letter_codes, num_connections)
+        eligible_nodes = [
+            node for node in letter_codes
+            if node in G and not G.nodes[node].get('is_central_institution', False)
+        ]
+        num_connections = int(central_institution_connection_percentage * len(eligible_nodes))
+        num_connections = min(num_connections, len(eligible_nodes))
+        random_nodes = random.sample(eligible_nodes, num_connections) if num_connections > 0 else []
         for node in random_nodes:
             G.add_edge(central_institution, node)
 

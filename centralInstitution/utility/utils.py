@@ -200,12 +200,13 @@ class Utils:
         for first in letters:
             for second in letters:
                 for third in letters:
-                    if len(codes) < n:
-                        codes.append(first + second + third)
-                    else:
-                        return codes
+                    for fourth in letters:
+                        if len(codes) < n:
+                            codes.append(first + second + third + fourth)
+                        else:
+                            return codes
         if len(codes) < n:
-            raise ValueError("Exceeded 26 × 26 × 26 = 17,576 possible three-letter codes")
+            raise ValueError("Exceeded 26^4 = 456,976 possible four-letter codes")
         return codes
     
     @staticmethod

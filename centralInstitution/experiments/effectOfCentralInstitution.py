@@ -26,6 +26,7 @@ class CentralInstitutionExperiment(MultiPhaseExperimentSkeleton):
         super().__init__()
         self.infection_model = Infection()
         self.G = None
+        self.ci_count = 0
     
     def setup_phase1(self):
         """Initialize the graph for phase 1 (no central institution)."""
@@ -54,24 +55,63 @@ class CentralInstitutionExperiment(MultiPhaseExperimentSkeleton):
     def setup_phase2(self):
         """Add central institution to the graph."""
         print("Adding central institution...")
-        CI.add_central_institution(
-            self.G,
-            list(self.G.nodes()),
-            P.CENTRAL_INSTITUTION_CONNECTION_PERCENTAGE
-        )
-        ci_connections = len(list(self.G.neighbors('CENTRAL_INSTITUTION')))
-        print(f"  Central institution connected to {ci_connections} nodes")
+        self._add_central_institution()
     
     def run_phase2(self):
         """Run phase 2 simulation with central institution."""
-        self.phase2_states, _ = self.infection_model.run_simulation(
-            G=self.G,
-            iterations=P.NUM_ITERATIONS,
-            seed=P.RANDOM_SEED,
-            central_institution_toggle=True,
-            first_phase_2=True
+        self.phase2_states = [(self.G.copy(), self._node_colors(self.G))]
+        target_infectable = sum(
+            1 for node in self.G.nodes()
+            if not self.G.nodes[node].get('is_central_institution', False)
         )
+        recent_counts = []
+
+        for i in range(P.NUM_ITERATIONS):
+            is_first_phase2_cycle = (i == 0 and P.PRINT_DEBUG)
+            self.infection_model.infect_cycle(
+                gr=self.G,
+                states=self.phase2_states,
+                central_institution_toggle=True,
+                debug=is_first_phase2_cycle,
+            )
+            cur_count = self.infection_model.total_graph_infected(self.G)
+            recent_counts.append(cur_count)
+
+            if cur_count == target_infectable:
+                print(
+                    f"Stopping phase 2 early at iteration {i + 1} as infection reached "
+                    f"{cur_count}/{target_infectable}."
+                )
+                break
+
+            if len(recent_counts) >= 3 and recent_counts[-1] == recent_counts[-2] == recent_counts[-3]:
+                self._add_central_institution()
+                # Capture the intervention step itself in the animation timeline.
+                self.phase2_states.append((self.G.copy(), self._node_colors(self.G)))
+                recent_counts = []
+
         self.states.extend(self.phase2_states)
+
+    @staticmethod
+    def _node_colors(graph):
+        return [
+            "orange" if graph.nodes[node].get('is_central_institution', False)
+            else "red" if graph.nodes[node].get('infected', False)
+            else "lightblue"
+            for node in graph.nodes()
+        ]
+
+    def _add_central_institution(self):
+        self.ci_count += 1
+        ci_name = "CENTRAL_INSTITUTION" if self.ci_count == 1 else f"CENTRAL_INSTITUTION_{self.ci_count}"
+        CI.add_central_institution(
+            self.G,
+            list(self.G.nodes()),
+            P.CENTRAL_INSTITUTION_CONNECTION_PERCENTAGE,
+            node_name=ci_name,
+        )
+        ci_connections = len(list(self.G.neighbors(ci_name)))
+        print(f"  {ci_name} connected to {ci_connections} nodes")
     
     def has_converged(self):
         """Check if phase 1 has converged."""

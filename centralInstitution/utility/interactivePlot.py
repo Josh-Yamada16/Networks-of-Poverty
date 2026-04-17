@@ -3,6 +3,7 @@ from matplotlib.widgets import Button
 from matplotlib.animation import FuncAnimation
 import networkx as nx
 from .visualizer import Visualization as viz
+import parameters as P
 
 class InteractivePlot:
     def __init__(self, states, layout):
@@ -45,7 +46,7 @@ class InteractivePlot:
         self.ax.clear()
         g, node_colors = self.states[self.current_index]
         render_layout = self._layout_for_graph(g)
-        nx.draw(g, pos=render_layout, ax=self.ax, node_color=node_colors, with_labels=True,
+        nx.draw(g, pos=render_layout, ax=self.ax, node_color=node_colors, with_labels=P.SHOW_NODE_LABELS,
                 edge_color='lightgray', width=2, node_size=500, font_color='white', font_size=10)
         if self.current_index == 0:
             self.ax.set_title("Initial State")

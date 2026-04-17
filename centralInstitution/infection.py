@@ -13,15 +13,19 @@ class Infection:
         # Complex Contagion infection model: if x fraction of p node's neighbors are infected, it becomes infected
         if infection_threshold is None:
             infection_threshold = P.INFECTION_THRESHOLD
-        # Cache non-central neighbors of the institution once per cycle.
-        central_neighbors = set()
-        if central_institution_toggle and graph.has_node("CENTRAL_INSTITUTION"):
-            central_neighbors = {
-                node for node in graph.neighbors("CENTRAL_INSTITUTION")
-                if not graph.nodes[node].get('is_central_institution', False)
-            }
+        # Cache non-central neighbors of each central institution once per cycle.
+        ci_neighbor_map = {}
+        if central_institution_toggle:
+            for ci in graph.nodes():
+                if not graph.nodes[ci].get('is_central_institution', False):
+                    continue
+                ci_neighbor_map[ci] = {
+                    node for node in graph.neighbors(ci)
+                    if not graph.nodes[node].get('is_central_institution', False)
+                }
             if debug:
-                print(f"  Central institution neighbors: {central_neighbors}")
+                total_neighbors = sum(len(nodes) for nodes in ci_neighbor_map.values())
+                print(f"  Central institution coverage: {len(ci_neighbor_map)} institutions, {total_neighbors} linked nodes")
         og_graph = graph.copy()  # Create a copy of the original graph to iterate over
         for node in graph.nodes():
             if graph.nodes[node].get('is_central_institution', False):
@@ -30,10 +34,14 @@ class Infection:
             if not neighbors:
                 continue  # Skip isolated nodes
             infected_neighbors = sum(1 for n in neighbors if og_graph.nodes[n].get('infected', False))
-            has_ci_neighbor = any(graph.nodes[n].get('is_central_institution', False) for n in neighbors)
+            ci_neighbors = {n for n in neighbors if graph.nodes[n].get('is_central_institution', False)}
+            has_ci_neighbor = bool(ci_neighbors)
             # if this node is connected to the central institution, it should access the central institution's neighbors as well
             if has_ci_neighbor:
-                expanded_neighbors = central_neighbors - {node}
+                expanded_neighbors = set()
+                for ci in ci_neighbors:
+                    expanded_neighbors |= ci_neighbor_map.get(ci, set())
+                expanded_neighbors -= {node}
                 neighbors |= expanded_neighbors
                 new_infected_count = sum(1 for n in expanded_neighbors if og_graph.nodes[n].get('infected', False))
                 if debug and new_infected_count > 0:
