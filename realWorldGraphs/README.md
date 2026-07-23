@@ -1,0 +1,2 @@
+# Note about Feature IDs
+- under the features, if the node has a certain feature, then it will be listed under the streamer. A streamer can have more than one feature and the feature can appear more than once under different streamers.
